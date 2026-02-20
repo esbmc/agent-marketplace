@@ -25,6 +25,12 @@ From within Claude Code:
 /plugin install esbmc-plugin@esbmc-marketplace
 ```
 
+If you want to remove the ESBMC agent, you can enter:
+
+```
+/plugin marketplace remove esbmc-marketplace
+```
+
 ## Prerequisites
 
 - [ESBMC](https://github.com/esbmc/esbmc/releases) installed and available in your PATH
