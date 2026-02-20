@@ -547,8 +547,49 @@ def test_dict_operations() -> None:
 test_dict_operations()
 
 # ============================================
-# Main: Run all tests
+# Example 12: Linear Search
 # ============================================
+
+from typing import List
+
+NIL: int = -1   # sentinel for "not found"
+
+def linear_search(A: List[int], n: int, x: int) -> int:
+    i: int = 0
+    while i < n:
+        if A[i] == x:
+            return i           # found – postcondition: A[i] == x
+        i += 1
+    m: int = 0
+    while m < n:
+        assert A[m] != x       # postcondition on the NIL path
+        m += 1
+
+    return NIL
+
+
+def test_linear_search() -> None:
+    n: int = nondet_int()
+    __ESBMC_assume(n >= 1 and n <= 4)
+
+    a0: int = nondet_int()
+    a1: int = nondet_int()
+    a2: int = nondet_int()
+    a3: int = nondet_int()
+    __ESBMC_assume(a0 >= -10 and a0 <= 10)
+    __ESBMC_assume(a1 >= -10 and a1 <= 10)
+    __ESBMC_assume(a2 >= -10 and a2 <= 10)
+    __ESBMC_assume(a3 >= -10 and a3 <= 10)
+
+    A: List[int] = [a0, a1, a2, a3]
+
+    # Symbolic search key
+    x: int = nondet_int()
+    __ESBMC_assume(x >= -10 and x <= 10)
+
+    result: int = linear_search(A, n, x)
+
+test_linear_search()
 
 # ============================================
 # Main: Run all tests
@@ -567,6 +608,7 @@ def main() -> None:
     test_email_validation()
     test_remove_duplicates()
     test_dict_operations()
+    test_linear_search()
 
     print("All tests passed!")
 
