@@ -14,27 +14,25 @@ Run with: esbmc python-verify.py --unwind 10 --no-pointer-check
 # In real code, these would be imported from esbmc module
 # For standalone testing, we provide stubs
 
-try:
-    from esbmc import nondet_int, nondet_float, nondet_bool, assume, esbmc_assert
-except ImportError:
-    # Stubs for running outside ESBMC
-    import random
-    def nondet_int() -> int:
-        return random.randint(-1000, 1000)
-    def nondet_float() -> float:
-        return random.uniform(-1000, 1000)
-    def nondet_bool() -> bool:
-        return random.choice([True, False])
-    def assume(cond: bool) -> None:
-        if not cond:
-            raise ValueError("Assumption violated")
-    def esbmc_assert(cond: bool, msg: str) -> None:
-        assert cond, msg
+import random
+def nondet_int() -> int:
+    return random.randint(-1000, 1000)
+def nondet_float() -> float:
+    return random.uniform(-1000, 1000)
+def nondet_bool() -> bool:
+    return random.choice([True, False])
+def __ESBMC_assume(cond: bool) -> None:
+    if not cond:
+        raise ValueError("Assumption violated")
+def __ESBMC_assert(cond: bool, msg: str) -> None:
+    assert cond, msg
 
 
 # ============================================
 # Example 1: Simple Function Verification
 # ============================================
+
+from esbmc import nondet_int, __ESBMC_assume
 
 def absolute_value(x: int) -> int:
     """Compute absolute value."""
