@@ -147,7 +147,7 @@ int result = a / b;
 
 ### Symbolic Inputs
 ```python
-from esbmc import nondet_int, assume, __ESBMC_assert
+from esbmc import nondet_int, assume
 
 x: int = nondet_int()
 assume(x > 0 and x < 100)
@@ -157,8 +157,13 @@ assert x < 100
 
 ### Postcondition Checking
 ```python
+def compute(x: float) -> float:
+    return x
+
+x = nondet_float()
+__ESBMC_assume(x >= 0)
 result = compute(x)
-esbmc_assert(result >= 0, "Result non-negative")
+assert result >= 0, "Result non-negative"
 ```
 
 ### List Verification
