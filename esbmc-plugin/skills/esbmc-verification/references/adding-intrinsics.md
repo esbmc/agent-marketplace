@@ -147,10 +147,12 @@ int result = a / b;
 
 ### Symbolic Inputs
 ```python
-from esbmc import nondet_int, assume, esbmc_assert
+from esbmc import nondet_int, assume, __ESBMC_assert
 
 x: int = nondet_int()
 assume(x > 0 and x < 100)
+assert x > 0
+assert x < 100
 ```
 
 ### Postcondition Checking
