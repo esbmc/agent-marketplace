@@ -169,11 +169,11 @@ assert result >= 0, "Result non-negative"
 ### List Verification
 ```python
 size: int = nondet_int()
-assume(size > 0 and size <= 10)
+__ESBMC_assume(size > 0 and size <= 10)
 lst: list[int] = []
 for _ in range(size):
     val: int = nondet_int()
-    assume(val > -100 and val < 100)
+    __ESBMC_assume(val > -100 and val < 100)
     lst.append(val)
 ```
 
