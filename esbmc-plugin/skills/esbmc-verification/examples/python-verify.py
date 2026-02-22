@@ -592,6 +592,71 @@ def test_linear_search() -> None:
 test_linear_search()
 
 # ============================================
+# Example 13: Two Sum
+# ============================================
+
+def two_sum(nums: list[int], target: int) -> list[int]:
+    """
+    Return indices [i, j] with i < j such that nums[i] + nums[j] == target.
+    Returns [] if no such pair exists.
+
+    Algorithm: hash-map (O(n) time, O(n) space).
+    For each element nums[i], compute complement = target - nums[i].
+    If complement was seen earlier, the pair is found immediately.
+    """
+    seen: dict[int, int] = {}          # value -> index
+    for i in range(len(nums)):
+        complement: int = target - nums[i]
+        if complement in seen:
+            return [seen[complement], i]
+        seen[nums[i]] = i
+    return []
+
+
+def test_two_sum() -> None:
+    """Verify two_sum correctness with symbolic inputs."""
+    n: int = nondet_int()
+    __ESBMC_assume(n >= 2 and n <= 4)
+
+    a0: int = nondet_int()
+    a1: int = nondet_int()
+    a2: int = nondet_int()
+    a3: int = nondet_int()
+    __ESBMC_assume(a0 >= -10 and a0 <= 10)
+    __ESBMC_assume(a1 >= -10 and a1 <= 10)
+    __ESBMC_assume(a2 >= -10 and a2 <= 10)
+    __ESBMC_assume(a3 >= -10 and a3 <= 10)
+
+    nums: list[int] = [a0, a1, a2, a3]
+    target: int = nondet_int()
+    __ESBMC_assume(target >= -20 and target <= 20)
+
+    result: list[int] = two_sum(nums[:n], target)
+
+    if len(result) == 2:
+        i: int = result[0]
+        j: int = result[1]
+
+        # Property: both indices are in bounds
+        assert 0 <= i and i < n, "First index in bounds"
+        assert 0 <= j and j < n, "Second index in bounds"
+
+        # Property: indices are distinct (two *different* elements)
+        assert i != j, "Indices are distinct"
+
+        # Property: the pair actually sums to target
+        assert nums[i] + nums[j] == target, "Sum equals target"
+
+    # Property: if NIL, no valid pair exists anywhere in nums[:n]
+    if len(result) == 0:
+        for p in range(n):
+            for q in range(p + 1, n):
+                assert nums[p] + nums[q] != target, "No valid pair exists"
+
+test_two_sum()
+
+
+# ============================================
 # Main: Run all tests
 # ============================================
 
@@ -609,6 +674,7 @@ def main() -> None:
     test_remove_duplicates()
     test_dict_operations()
     test_linear_search()
+    test_two_sum()
 
     print("All tests passed!")
 
