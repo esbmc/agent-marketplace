@@ -7,7 +7,7 @@ Demonstrates ESBMC's Python verification capabilities:
 - Non-deterministic inputs
 - List/array/dict operations
 
-Run with: esbmc python-verify.py --unwind 10 --no-pointer-check
+Run with: esbmc python-verify.py --incremental-bmc --no-pointer-check --k-step 2 --bitwuzla
 """
 
 # ESBMC Python intrinsics (available when running under ESBMC)
