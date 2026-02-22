@@ -219,6 +219,120 @@ def main():
 esbmc verify_search.py --unwind 10
 ```
 
+## Python Dictionary Verification
+
+### Overview
+
+Python dictionaries are fully supported in ESBMC's Python frontend. Because ESBMC models dictionaries as finite, bounded structures, you must annotate dictionary types clearly and keep key/value sets tractable for the solver.
+
+### Type Annotations for Dictionaries
+
+Type annotations are required for verification, just as with other Python types:
+
+```python
+def get_value(d: dict[str, int], key: str) -> int:
+    assert key in d
+    return d[key]
+
+def update_balance(ledger: dict[str, int], user: str, amount: int) -> None:
+    assert user in ledger
+    ledger[user] += amount
+    assert ledger[user] >= 0
+```
+
+### Common Dictionary Operations
+
+ESBMC supports the most common dictionary operations during verification:
+
+```python
+def verify_dict_ops() -> None:
+    d: dict[str, int] = {"a": 1, "b": 2}
+
+    # Membership testing
+    assert "a" in d
+    assert "c" not in d
+
+    # Access and update
+    d["c"] = 3
+    assert len(d) == 3
+
+    # Deletion
+    del d["a"]
+    assert "a" not in d
+
+    # .get() with default
+    val: int = d.get("missing", 0)
+    assert val == 0
+```
+
+```bash
+esbmc verify_dict_ops.py --unwind 10
+```
+
+### Using Nondet Values with Dictionaries
+
+You can use ESBMC intrinsics to model dictionaries with symbolic (unknown) values:
+
+```python
+from esbmc import nondet_int, nondet_str, __ESBMC_assume, __ESBMC_assert
+
+def verify_dict_lookup() -> None:
+    d: dict[str, int] = {"x": nondet_int(), "y": nondet_int()}
+
+    __ESBMC_assume(d["x"] >= 0)
+    __ESBMC_assume(d["y"] >= 0)
+
+    total: int = d["x"] + d["y"]
+    __ESBMC_assert(total >= 0, "sum of non-negative values is non-negative")
+```
+
+### Verifying Dictionary Invariants
+
+A common pattern is asserting invariants that must hold across all dictionary entries:
+
+```python
+def all_balances_non_negative(balances: dict[str, int]) -> bool:
+    for v in balances.values():
+        if v < 0:
+            return False
+    return True
+
+def transfer(balances: dict[str, int], sender: str, receiver: str, amount: int) -> None:
+    assert sender in balances and receiver in balances
+    assert balances[sender] >= amount, "Insufficient funds"
+
+    balances[sender] -= amount
+    balances[receiver] += amount
+
+    assert all_balances_non_negative(balances), "Invariant violated after transfer"
+```
+
+```bash
+esbmc transfer.py --unwind 10 --overflow-check
+```
+
+### Limitations and Recommendations
+
+Because ESBMC performs bounded verification, dictionaries with unbounded or dynamically growing key sets can lead to state-space explosion or incomplete analysis. To keep verification tractable:
+
+- Keep dictionaries small and fixed in size where possible, or use `__ESBMC_assume()` to constrain key sets.
+- Avoid deeply nested dictionaries (`dict[str, dict[str, int]]`) without tight bounds.
+- Use `--unwind` values proportional to the number of iterations over dictionary entries.
+- Prefer `--nondet-str-length` to control symbolic string key length, since unbounded string keys increase solver complexity significantly.
+
+```bash
+# Recommended flags for dictionary-heavy programs
+esbmc script.py --unwind 10 --nondet-str-length 16 --overflow-check
+```
+
+### Choosing Unwind Bounds for Dictionaries
+
+| Dictionary Size | Recommended `--unwind` |
+|-----------------|------------------------|
+| 1–5 entries     | 5–10                   |
+| 6–15 entries    | 10–20                  |
+| 16+ entries     | Consider abstraction or splitting verification targets |
+
 ## Solidity Smart Contract Verification
 
 ### Basic Usage
