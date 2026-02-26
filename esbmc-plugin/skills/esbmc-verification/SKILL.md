@@ -1,7 +1,8 @@
 ---
 name: esbmc-verification
 description: This skill should be used when the user asks to "verify code", "run ESBMC", "model check", "check for bugs", "find memory leaks", "detect buffer overflow", "find undefined behavior", "check for race conditions", "detect deadlocks", "prove correctness", "add verification intrinsics", "add nondet values", "add type annotations", "add preconditions", "make code verifiable", or mentions bounded model checking, SMT solving, formal methods, or safety properties. Provides guidance for verifying C, C++, Python, Solidity, CUDA, and Java/Kotlin programs with ESBMC and adding verification annotations.
-version: 1.0.0
+metadata:
+  version: "1.1.0"
 ---
 
 # ESBMC Verification Skill
