@@ -9,7 +9,7 @@ arguments:
 
 # ESBMC Security Audit Command
 
-Perform a comprehensive security audit using multiple ESBMC verification passes run in parallel.
+Perform a comprehensive security audit using multiple ESBMC verification passes.
 
 ## Instructions
 
@@ -23,50 +23,44 @@ Perform a comprehensive security audit using multiple ESBMC verification passes 
    - Presence of concurrency (pthreads, std::thread, threading module)
    - Complexity indicators (loops, recursion, dynamic allocation)
 
-3. Discover loop structure:
+3. Run multiple verification passes:
+
+   **Pass 1: Quick Scan (30s timeout, unwind 5)**
    ```bash
-   esbmc <file> --show-loops
-   ```
-   From the output, determine the unwinding strategy for all subsequent passes:
-   - **Known loop bounds**: use `--unwindset <L1:N,...>` (derived from source + loop IDs)
-   - **Unknown loop bounds**: use `--incremental-bmc`
-
-   Let `<UNWIND>` denote whichever flag was chosen above. Always use `--boolector` as
-   the SMT solver in every pass.
-
-4. Run the following passes **in parallel** (issue all Bash tool calls in a single
-   response so they execute concurrently):
-
-   **Pass A: Default properties** (pointer safety, bounds, division by zero)
-   ```bash
-   esbmc <file> --boolector <UNWIND> --timeout 60s
+   esbmc <file> --unwind 5 --timeout 30s
    ```
 
-   **Pass B: Memory safety**
+   **Pass 2: Memory Safety (60s timeout, unwind 10)**
    ```bash
-   esbmc <file> --boolector <UNWIND> --memory-leak-check --timeout 60s
+   esbmc <file> --memory-leak-check --unwind 10 --timeout 60s
    ```
 
-   **Pass C: Integer safety**
+   **Pass 3: Integer Safety (60s timeout, unwind 10)**
    ```bash
-   esbmc <file> --boolector <UNWIND> --overflow-check --unsigned-overflow-check --timeout 60s
+   esbmc <file> --overflow-check --unsigned-overflow-check --unwind 10 --timeout 60s
    ```
 
-   **Pass D: Undefined-behavior shifts**
+   **Pass 4: Concurrency (if applicable) (60s timeout)**
    ```bash
-   esbmc <file> --boolector <UNWIND> --ub-shift-check --timeout 60s
+   esbmc <file> --deadlock-check --data-races-check --context-bound 2 --unwind 10 --timeout 60s
    ```
 
-   **Pass E: Concurrency** (only if the file contains threads/mutexes)
+   **Pass 5: Deep Verification (120s timeout, unwind 30)**
    ```bash
-   esbmc <file> --boolector <UNWIND> --deadlock-check --data-races-check --context-bound 2 --timeout 60s
+   esbmc <file> --memory-leak-check --overflow-check --unwind 30 --timeout 120s
    ```
 
-5. After all passes complete, compile results into a summary report:
-   - Result of each pass (PASSED / FAILED / UNKNOWN)
-   - For any FAILED pass: violation type and key counterexample trace
-   - Overall issue count by category
+   **Pass 6: K-Induction Proof Attempt (120s timeout)**
+   ```bash
+   esbmc <file> --k-induction --max-k-step 20 --timeout 120s
+   ```
+
+4. Compile results into a summary report:
+   - Number of passes completed
+   - Issues found per category
    - Recommendations for fixes
+
+5. Present the audit results in a clear, structured format
 
 ## Output Format
 
@@ -76,34 +70,23 @@ ESBMC Security Audit Report
 File: <filename>
 Language: <language>
 Concurrency: <yes/no>
-Solver: Boolector
-Unwind strategy: <incremental-bmc | unwindset ...>
 
 Results:
 --------
-[Pass A: Default properties]
+[Pass 1: Quick Scan]
   ✓ PASSED / ✗ FAILED: <details>
 
-[Pass B: Memory safety]
+[Pass 2: Memory Safety]
   ✓ PASSED / ✗ FAILED: <details>
 
-[Pass C: Integer safety]
-  ✓ PASSED / ✗ FAILED: <details>
-
-[Pass D: UB shifts]
-  ✓ PASSED / ✗ FAILED: <details>
-
-[Pass E: Concurrency]
-  ✓ PASSED / ✗ FAILED / — SKIPPED: <details>
+...
 
 Summary:
 --------
 Total Issues: N
-- Default properties: X issues
-- Memory: Y issues
-- Integer: Z issues
-- UB shifts: W issues
-- Concurrency: V issues
+- Memory: X issues
+- Integer: Y issues
+- Concurrency: Z issues
 
 Recommendations:
 ----------------

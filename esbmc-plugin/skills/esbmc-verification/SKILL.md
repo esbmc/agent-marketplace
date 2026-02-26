@@ -25,25 +25,23 @@ Source Code → Frontend Parser → GOTO Program → Symbolic Execution (SSA) �
 ## Quick Start
 
 ```bash
-# C file — discover loops first, then verify
-esbmc file.c --show-loops
-esbmc file.c --boolector --incremental-bmc --timeout 120s   # unknown loop bounds
-esbmc file.c --boolector --unwindset L1:5,L2:3 --timeout 60s  # known loop bounds
+# C file with default checks
+esbmc file.c
 
 # C++ file
-esbmc file.cpp --boolector --incremental-bmc
+esbmc file.cpp
 
 # Python (requires type annotations)
-esbmc file.py --boolector --incremental-bmc
+esbmc file.py
 
 # Solidity contract
-esbmc --sol contract.sol --contract ContractName --boolector
+esbmc --sol contract.sol --contract ContractName
 
 # Common safety checks
-esbmc file.c --boolector --incremental-bmc --memory-leak-check --overflow-check --timeout 120s
+esbmc file.c --memory-leak-check --overflow-check --unwind 10 --timeout 60s
 
 # Concurrency verification
-esbmc file.c --boolector --deadlock-check --data-races-check --context-bound 2 --incremental-bmc
+esbmc file.c --deadlock-check --data-races-check --context-bound 2
 ```
 
 ## Supported Languages
@@ -82,56 +80,42 @@ For the full CLI reference, see `references/cli-options.md`.
 
 ## Loop Handling
 
-Always run `--show-loops` first to identify loop IDs and their locations before
-choosing an unwinding strategy.
-
 ```bash
-# Step 1: discover loops and their IDs
+# Unwind all loops N times
+esbmc file.c --unwind 10
+
+# Per-loop bounds (use --show-loops to find loop IDs)
 esbmc file.c --show-loops
+esbmc file.c --unwindset L1:5,L2:10
 
-# Step 2a: known bounds — set per-loop unwind counts (most precise)
-esbmc file.c --boolector --unwindset L1:5,L2:10 --timeout 60s
+# Incremental unwinding (find bugs faster)
+esbmc file.c --incremental-bmc
 
-# Step 2b: unknown bounds — incremental BMC (preferred default)
-esbmc file.c --boolector --incremental-bmc --timeout 120s
-
-# Step 2c: no loops present — plain verification
-esbmc file.c --boolector --timeout 60s
-
-# k-induction for unbounded correctness proof
-esbmc file.c --boolector --k-induction
+# k-induction for unbounded verification
+esbmc file.c --k-induction
 ```
-
-**Strategy selection:**
-- Prefer `--unwindset` when loop bounds are known (most efficient, most precise)
-- Use `--incremental-bmc` when loop bounds are unknown (starts at 1, increases until bug found or property proven)
-- Avoid `--unwind N` with a guessed N — it may miss bugs above N or waste time below actual bounds
 
 ## Verification Strategies
 
 | Goal | Strategy | Command |
 |------|----------|---------|
-| Unknown loop bounds (default) | Incremental BMC | `--boolector --incremental-bmc` |
-| Known loop bounds | Per-loop unwindset | `--boolector --unwindset L1:N,...` |
-| Prove partial correctness | *k*-Induction | `--boolector --k-induction` |
-| All violations in one run | Multi-property | `--boolector --incremental-bmc --multi-property` |
-| Large programs | Incremental SMT | `--boolector --smt-during-symex` |
-| Concurrent code | Context-bounded | `--boolector --context-bound 3` |
+| Quick bug finding | BMC | `--unwind 10` |
+| Unknown loop bounds | Incremental BMC | `--incremental-bmc` |
+| Prove partial correctness | *k*-Induction | `--k-induction` |
+| All violations | Multi-property | `--multi-property` |
+| Large programs | Incremental SMT | `--smt-during-symex` |
+| Concurrent code | Context-bounded | `--context-bound 3` |
 
 For detailed descriptions of the strategies and their configurations, see `references/verification-strategies.md`.
 
 ## Solver Selection
 
-Prefer solvers in this order: **Boolector > Bitwuzla > Z3**.
-
 ```bash
-esbmc --list-solvers        # List available solvers
-esbmc file.c --boolector    # Recommended default
-esbmc file.c --bitwuzla     # Second choice
-esbmc file.c --z3           # Fallback
+esbmc --list-solvers   # List available solvers
+esbmc file.c --z3      # Z3 (default)
+esbmc file.c --bitwuzla # Fast bit-vectors
+esbmc file.c --boolector # Efficient bit-vectors
 ```
-
-Always pass `--boolector` explicitly — do not rely on the ESBMC default.
 
 ## ESBMC Intrinsics
 
@@ -188,41 +172,26 @@ esbmc file.c --memlimit 4g    # Memory limit
 
 ## Common Workflows
 
-### Any Program (Unknown Loop Bounds)
+### Bug Hunting
 ```bash
-esbmc file.c --show-loops                                           # discover loops
-esbmc file.c --boolector --incremental-bmc --timeout 120s           # default strategy
-```
-
-### Known Loop Bounds
-```bash
-esbmc file.c --show-loops                                           # get loop IDs
-esbmc file.c --boolector --unwindset L1:5,L2:3 --timeout 60s       # precise unwinding
+esbmc file.c --unwind 5 --timeout 60s          # Quick scan
+esbmc file.c --incremental-bmc --timeout 120s   # If timeout
 ```
 
 ### Proving Correctness
 ```bash
-esbmc file.c --boolector --k-induction --overflow-check
+esbmc file.c --k-induction --overflow-check
+esbmc file.c --unwind 100 --multi-property      # Thorough bounded check
 ```
 
 ### Memory Safety Audit
 ```bash
-esbmc file.c --show-loops
-esbmc file.c --boolector --incremental-bmc --memory-leak-check --timeout 120s
+esbmc file.c --memory-leak-check --unwind 10
 ```
 
 ### Concurrency Verification
 ```bash
-esbmc threaded.c --boolector --incremental-bmc --deadlock-check --data-races-check --context-bound 2
-```
-
-### Parallel Multi-Property Audit
-Run these simultaneously (parallel Bash tool calls) for comprehensive coverage:
-```bash
-esbmc file.c --boolector --incremental-bmc --timeout 120s
-esbmc file.c --boolector --incremental-bmc --memory-leak-check --timeout 120s
-esbmc file.c --boolector --incremental-bmc --overflow-check --unsigned-overflow-check --timeout 120s
-esbmc file.c --boolector --incremental-bmc --ub-shift-check --timeout 120s
+esbmc threaded.c --deadlock-check --data-races-check --context-bound 2
 ```
 
 For guidance on fixing verification failures, see `references/fixing-failures.md`.
