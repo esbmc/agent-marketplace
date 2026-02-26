@@ -44,9 +44,12 @@ The `__ESBMC_loop_invariant()` macro must be placed **immediately before the loo
 
 ### For Loops
 
+The loop variable must be declared **before** the loop so it is visible to the invariant macro. Do not use `for (int i = 0; ...)` — declare `i` separately first.
+
 ```c
+int i = 0, sum = 0;
 __ESBMC_loop_invariant(i >= 0 && i <= n && sum == i * 10);
-for (int i = 0; i < n; i++) {
+for (; i < n; i++) {
     sum += 10;
 }
 ```
@@ -241,15 +244,27 @@ A passing result is sound — the property genuinely holds under the invariant. 
 
 ## Assertions Inside Loop Bodies
 
-Assertions (`assert()`) inside the loop body are verified against the **assumed** invariant at the top of each iteration. This means they are checked independently of the unroll depth:
+Assertions (`assert()`) inside the loop body are verified against the **assumed** invariant at the top of each iteration. This means they are checked independently of the unroll depth.
+
+**Important**: the loop variable must be declared **before** the loop so it is in scope when `__ESBMC_loop_invariant()` is evaluated. Do not use `for (int i = 0; ...)` style declarations — declare the variable outside the loop first.
 
 ```c
-__ESBMC_loop_invariant(i >= 0 && i < N && arr[i] >= 0);
-for (int i = 0; i < N; i++) {
-    assert(arr[i] >= 0);   // verified using the assumed invariant
-    process(arr[i]);
-    // invariant must still hold after process()
+#include <assert.h>
+
+int main() {
+    int i = 0, sum = 0;
+    __ESBMC_loop_invariant(i >= 0 && i <= 100 && sum == i * 2);
+    while (i < 100) {
+        sum += 2;
+        assert(sum >= 0);   // follows from invariant: sum == i*2 and i >= 0
+        i++;
+    }
+    return 0;
 }
+```
+
+```bash
+esbmc file.c --loop-invariant --ir
 ```
 
 ## Interaction with k-Induction

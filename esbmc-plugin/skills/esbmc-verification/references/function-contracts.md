@@ -90,6 +90,8 @@ int abs_val(int x) {
 }
 ```
 
+> Use `--ir` when enforcing this function — without it, the bit-vector solver may report a spurious overflow counterexample for `x = INT_MIN`.
+
 ### `__ESBMC_old(expr)` — Pre-State Snapshot
 
 Captures the value of an expression **at function entry**, for use inside `__ESBMC_ensures()`. Useful for relating the post-state to the pre-state.
@@ -212,30 +214,33 @@ esbmc file.c --replace-call-with-contract "low_level_func" \
 
 ### Basic Precondition / Postcondition
 
+In replace mode, `assert()` must follow directly from the `ensures` clause — the solver uses the ensures as an `assume` and cannot derive values beyond what the clause states. Use relational postconditions rather than equality to an exact value.
+
 ```c
 #include <assert.h>
 
-int divide(int a, int b) {
-    __ESBMC_requires(b != 0);
-    __ESBMC_ensures(__ESBMC_return_value * b == a);
-    return a / b;
+int increment(int x) {
+    __ESBMC_requires(x > 0);
+    __ESBMC_ensures(__ESBMC_return_value > x);
+    return x + 1;
 }
 
 int main() {
-    int x = divide(10, 2);
-    assert(x == 5);
+    int a = 5;
+    int result = increment(a);
+    assert(result > a);   // follows directly from ensures
     return 0;
 }
 ```
 
 ```bash
-# Verify main() relying on divide()'s contract
-esbmc main.c --replace-call-with-contract "divide"
+esbmc main.c --replace-call-with-contract "*"
 ```
 
 ### Struct Mutation with Assigns
 
 ```c
+#include <stddef.h>
 typedef struct { int x, y; } Point;
 
 void zero_point(Point *p) {
@@ -257,6 +262,7 @@ esbmc point.c --enforce-contract "zero_point" \
 ### Pre-State Comparison with `__ESBMC_old`
 
 ```c
+#include <stddef.h>
 void push(Stack *s, int val) {
     __ESBMC_requires(s != NULL && s->size < MAX);
     __ESBMC_assigns(s->data[s->size], s->size);
@@ -282,28 +288,38 @@ void set_element(int i, int v) {
 
 ### Hierarchical / Compositional Verification
 
+Enforce the leaf function first, then replace its calls when verifying the caller.
+
+> **Note**: enforce mode does not work well for recursive functions — the recursive calls cause exponential unrolling. Use contracts for non-recursive functions or functions where recursion is bounded and small.
+
 ```c
-// Level 1: leaf function — verified against its contract
-int fib(int n) {
-    __ESBMC_requires(n >= 0);
-    __ESBMC_ensures(__ESBMC_return_value >= 0);
-    if (n <= 1) return n;
-    return fib(n - 1) + fib(n - 2);
+#include <assert.h>
+
+// Level 1: leaf function — enforce its contract independently
+int double_val(int x) {
+    __ESBMC_requires(x >= 0);
+    __ESBMC_ensures(__ESBMC_return_value >= x);
+    return x * 2;
 }
 
-// Level 2: caller — verified assuming fib's contract holds
+// Level 2: caller — verified assuming double_val's contract holds
 int main() {
-    int result = fib(10);
-    assert(result >= 0);
+    int a = 3, b = 5;
+    int ra = double_val(a);
+    int rb = double_val(b);
+    assert(ra >= a);
+    assert(rb >= b);
     return 0;
 }
 ```
 
 ```bash
-# Step 1
-esbmc fib.c --enforce-contract "fib"
-# Step 2
-esbmc fib.c --replace-call-with-contract "fib"
+# Step 1: prove double_val satisfies its contract
+# --ir avoids spurious overflow counterexamples for arithmetic postconditions
+esbmc file.c --enforce-contract "double_val" --function "double_val" --ir
+
+# Step 2: verify main() using the proven contract
+esbmc file.c --replace-call-with-contract "double_val"
 ```
 
 ## Verification Modes Comparison
