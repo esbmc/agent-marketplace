@@ -271,11 +271,12 @@ esbmc file.c --loop-invariant --ir
 
 `--loop-invariant` and `--k-induction` are different mechanisms:
 
-| | `--loop-invariant` | `--k-induction` |
-|-|-------------------|-----------------|
-| Invariant source | User-supplied macro | Automatically inferred |
-| Completeness | Depends on invariant quality | Automatic but may time out |
-| Control | Explicit, predictable | Heuristic |
+| Feature          | `--loop-invariant`                        | `--k-induction`                          |
+|------------------|-------------------------------------------|------------------------------------------|
+| Invariant source | User-supplied via `__ESBMC_loop_invariant()` | Automatically inferred by ESBMC       |
+| Completeness     | Depends on invariant quality              | Automatic, but may time out              |
+| Predictability   | Explicit and deterministic                | Heuristic search                         |
+| Best used when   | You know the invariant                    | You want ESBMC to search for one         |
 
 Use `--loop-invariant` when you know the invariant and want a deterministic, fast proof. Use `--k-induction` when you want ESBMC to search for one automatically.
 

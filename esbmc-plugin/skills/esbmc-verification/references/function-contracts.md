@@ -109,10 +109,12 @@ Multiple `__ESBMC_old()` calls are supported in the same ensures clause:
 ```c
 void swap(int *a, int *b) {
     __ESBMC_assigns(*a, *b);
-    __ESBMC_ensures(*a == __ESBMC_old(*b) && *b == __ESBMC_old(*a));
+    __ESBMC_ensures(*a == __ESBMC_old(*b) & *b == __ESBMC_old(*a));
     int tmp = *a; *a = *b; *b = tmp;
 }
 ```
+
+> **Warning**: When combining multiple `__ESBMC_old` sub-expressions inside `__ESBMC_ensures()`, use bitwise `&` / `|` instead of logical `&&` / `||`, or use the `__ESBMC_and(a, b)` / `__ESBMC_or(a, b)` macros. C's short-circuit evaluation can prevent `__ESBMC_old` from capturing the pre-state of operands that are never evaluated. This restriction only applies when `__ESBMC_old` appears in the expression — ordinary conditions without `__ESBMC_old` (e.g. `p != NULL && n > 0`) may use `&&` normally.
 
 ### `__ESBMC_is_fresh(ptr, size)` — Memory Freshness
 

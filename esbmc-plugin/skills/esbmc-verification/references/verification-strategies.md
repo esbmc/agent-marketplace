@@ -301,29 +301,28 @@ esbmc file.c --branch-coverage-claims
 ### How It Works
 
 Uses function contracts (pre/postconditions) to modularize verification:
-- **Enforce**: Verify function meets its contract
-- **Replace**: Use contract instead of function body
+- **Enforce** (`--enforce-contract`): Verify the function body satisfies its own contract in isolation
+- **Replace** (`--replace-call-with-contract`): Substitute every call site with the contract's semantics, skipping symbolic execution of the body
+
+> **Important**: Enforce and replace must always be used together for sound and efficient verification. Enforce proves the contract is valid; replace delivers the speed benefit by avoiding repeated body exploration. See `references/function-contracts.md` for full guidance on the workflow and when each mode is appropriate.
 
 ### When to Use
 
-- Large codebases
-- Modular verification
-- Library functions with specifications
+- A function is called multiple times and BMC times out due to repeated body exploration
+- Modular verification of large codebases
+- Library functions where only the interface matters
 
 ### Configuration
 
 ```bash
-# Check all function contracts
-esbmc file.c --enforce-contract "*"
+# Step 1: prove the function satisfies its contract
+esbmc file.c --enforce-contract "myfunction" --function "myfunction"
 
-# Check specific function
-esbmc file.c --enforce-contract "myfunction"
+# Step 2: verify callers using the proven contract
+esbmc file.c --replace-call-with-contract "myfunction"
 
-# Replace calls with contracts
-esbmc file.c --replace-call-with-contract "library_func"
-
-# Combine both
-esbmc file.c --enforce-contract "impl" --replace-call-with-contract "helper"
+# Enforce all annotated contracts at once
+esbmc file.c --enforce-all-contracts
 ```
 
 ## Strategy Selection Guide
