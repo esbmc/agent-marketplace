@@ -9,7 +9,7 @@ arguments:
 
 # ESBMC Security Audit Command
 
-Perform a comprehensive security audit using multiple ESBMC verification passes.
+Perform a comprehensive security audit using multiple ESBMC verification passes run concurrently.
 
 ## Instructions
 
@@ -23,44 +23,26 @@ Perform a comprehensive security audit using multiple ESBMC verification passes.
    - Presence of concurrency (pthreads, std::thread, threading module)
    - Complexity indicators (loops, recursion, dynamic allocation)
 
-3. Run multiple verification passes:
+3. **Solver detection** — run `esbmc --list-solvers` and select the best available solver using this priority order: Boolector → Bitwuzla → Z3. Use the corresponding flag: `--boolector`, `--bitwuzla`, or `--z3`. Store this as `<solver-flag>`. If none of these solvers are listed as available, stop and tell the user that ESBMC is built without solver support, and direct them to build ESBMC with solver support: https://github.com/esbmc/esbmc
 
-   **Pass 1: Quick Scan (30s timeout, unwind 5)**
-   ```bash
-   esbmc <file> --unwind 5 --timeout 30s
-   ```
+4. **Loop discovery** — run `esbmc <file> --show-loops` to list all loops. Choose the unwind strategy:
+   - No loops found → no unwind flag needed
+   - Loops with bounds apparent from the source → use `--unwindset L1:N,...` with per-loop bounds derived from the source
+   - Loops with unknown or dynamic bounds → use `--incremental-bmc`
 
-   **Pass 2: Memory Safety (60s timeout, unwind 10)**
-   ```bash
-   esbmc <file> --memory-leak-check --unwind 10 --timeout 60s
-   ```
+   Store the resulting unwind flag(s) as `<unwind-strategy>`.
 
-   **Pass 3: Integer Safety (60s timeout, unwind 10)**
-   ```bash
-   esbmc <file> --overflow-check --unsigned-overflow-check --unwind 10 --timeout 60s
-   ```
+5. **Spawn parallel subagents** using the Task tool (subagent_type: general-purpose), one per pass. Launch all subagents in a single message so they execute concurrently. Each subagent receives: the file path, `<solver-flag>`, `<unwind-strategy>`, and its specific checks.
 
-   **Pass 4: Concurrency (if applicable) (60s timeout)**
-   ```bash
-   esbmc <file> --deadlock-check --data-races-check --context-bound 2 --unwind 10 --timeout 60s
-   ```
+   | Subagent | Checks | Command |
+   |----------|--------|---------|
+   | A: Default properties | _(none — covers bounds, ptr safety, div-by-zero)_ | `esbmc <file> <solver-flag> <unwind-strategy> --timeout 60s` |
+   | B: Memory safety | `--memory-leak-check` | `esbmc <file> <solver-flag> <unwind-strategy> --memory-leak-check --timeout 60s` |
+   | C: Integer safety | `--overflow-check --unsigned-overflow-check` | `esbmc <file> <solver-flag> <unwind-strategy> --overflow-check --unsigned-overflow-check --timeout 60s` |
+   | D: UB shifts | `--ub-shift-check` | `esbmc <file> <solver-flag> <unwind-strategy> --ub-shift-check --timeout 60s` |
+   | E: Concurrency _(only if threads detected in step 2)_ | `--deadlock-check --data-races-check --context-bound 2` | `esbmc <file> <solver-flag> <unwind-strategy> --deadlock-check --data-races-check --context-bound 2 --timeout 60s` |
 
-   **Pass 5: Deep Verification (120s timeout, unwind 30)**
-   ```bash
-   esbmc <file> --memory-leak-check --overflow-check --unwind 30 --timeout 120s
-   ```
-
-   **Pass 6: K-Induction Proof Attempt (120s timeout)**
-   ```bash
-   esbmc <file> --k-induction --max-k-step 20 --timeout 120s
-   ```
-
-4. Compile results into a summary report:
-   - Number of passes completed
-   - Issues found per category
-   - Recommendations for fixes
-
-5. Present the audit results in a clear, structured format
+6. Collect results from all subagents and compile into a structured report:
 
 ## Output Format
 
@@ -70,23 +52,34 @@ ESBMC Security Audit Report
 File: <filename>
 Language: <language>
 Concurrency: <yes/no>
+Solver: <solver used>
+Unwind strategy: <strategy>
 
 Results:
 --------
-[Pass 1: Quick Scan]
+[A: Default Properties]
   ✓ PASSED / ✗ FAILED: <details>
 
-[Pass 2: Memory Safety]
+[B: Memory Safety]
   ✓ PASSED / ✗ FAILED: <details>
 
-...
+[C: Integer Safety]
+  ✓ PASSED / ✗ FAILED: <details>
+
+[D: UB Shifts]
+  ✓ PASSED / ✗ FAILED: <details>
+
+[E: Concurrency]
+  ✓ PASSED / ✗ FAILED / N/A: <details>
 
 Summary:
 --------
 Total Issues: N
-- Memory: X issues
-- Integer: Y issues
-- Concurrency: Z issues
+- Default properties: X issues
+- Memory: Y issues
+- Integer: Z issues
+- UB shifts: W issues
+- Concurrency: V issues
 
 Recommendations:
 ----------------

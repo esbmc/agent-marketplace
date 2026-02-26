@@ -101,28 +101,47 @@ For the refinement workflow, see `references/loop-invariants.md` and `references
 
 ## Loop Handling
 
+K-induction is an alternative strategy that bypasses loop discovery entirely — see the Strategy Selection section below. If you are using BMC instead, always start by discovering loops before choosing an unwind strategy. Never guess a bound with `--unwind N`.
+
 ```bash
-# Unwind all loops N times
-esbmc file.c --unwind 10
-
-# Per-loop bounds (use --show-loops to find loop IDs)
+# Step 1: discover all loops and their IDs
 esbmc file.c --show-loops
-esbmc file.c --unwindset L1:5,L2:10
-
-# Incremental unwinding (find bugs faster)
-esbmc file.c --incremental-bmc
-
-# k-induction for unbounded verification
-esbmc file.c --k-induction
 ```
+
+Decision tree based on the output:
+- **No loops** → no unwind flag needed; run without any unwind option
+- **Loops with apparent bounds** (e.g., `for (i = 0; i < N; i++)`) → use per-loop bounds derived from the source:
+  ```bash
+  esbmc file.c --unwindset L1:N,L2:M
+  ```
+- **Loops with unknown or dynamic bounds** → use incremental BMC:
+  ```bash
+  esbmc file.c --incremental-bmc
+  ```
+
+## Strategy Selection
+
+Choose a high-level path before running any checks:
+
+**Path A — k-Induction (try first for proving correctness)**
+- No loop discovery needed.
+- Detect CPU count: `nproc` on Linux, `sysctl -n hw.ncpu` on macOS.
+- >4 CPUs → use `--k-induction-parallel`
+- ≤4 CPUs → use `--k-induction`
+- If k-induction succeeds → property is proved (unbounded result).
+- If k-induction times out or returns UNKNOWN → fall back to Path B.
+
+**Path B — BMC (bounded, loop-aware)**
+- Run `--show-loops`, then choose `--unwindset` or `--incremental-bmc` per the Loop Handling decision tree above.
 
 ## Verification Strategies
 
 | Goal | Strategy | Command |
 |------|----------|---------|
-| Quick bug finding | BMC | `--unwind 10` |
+| Loops with known bounds | BMC with unwindset | `--unwindset L1:N,...` |
 | Unknown loop bounds | Incremental BMC | `--incremental-bmc` |
-| Prove partial correctness | *k*-Induction | `--k-induction` |
+| Prove correctness (≤4 CPUs) | k-Induction | `--k-induction` |
+| Prove correctness (>4 CPUs) | k-Induction parallel | `--k-induction-parallel` |
 | All violations | Multi-property | `--multi-property` |
 | Large programs | Incremental SMT | `--smt-during-symex` |
 | Concurrent code | Context-bounded | `--context-bound 3` |
@@ -131,12 +150,16 @@ For detailed descriptions of the strategies and their configurations, see `refer
 
 ## Solver Selection
 
+Always detect available solvers via `--list-solvers` rather than assuming one is present. Use the best available solver by priority: **Boolector → Bitwuzla → Z3**.
+
 ```bash
-esbmc --list-solvers   # List available solvers
-esbmc file.c --z3      # Z3 (default)
-esbmc file.c --bitwuzla # Fast bit-vectors
-esbmc file.c --boolector # Efficient bit-vectors
+esbmc --list-solvers      # Detect available solvers
+esbmc file.c --boolector  # Boolector (highest priority)
+esbmc file.c --bitwuzla   # Bitwuzla (second priority)
+esbmc file.c --z3         # Z3 (fallback)
 ```
+
+If none of these solvers are available, ESBMC was built without solver support and verification cannot proceed.
 
 ## ESBMC Intrinsics
 
@@ -195,24 +218,37 @@ esbmc file.c --memlimit 4g    # Memory limit
 
 ### Bug Hunting
 ```bash
-esbmc file.c --unwind 5 --timeout 60s          # Quick scan
-esbmc file.c --incremental-bmc --timeout 120s   # If timeout
+# Step 1: discover loops
+esbmc file.c --show-loops
+# Step 2a: known bounds
+esbmc file.c --boolector --unwindset L1:N --timeout 60s
+# Step 2b: unknown bounds
+esbmc file.c --boolector --incremental-bmc --timeout 120s
 ```
 
 ### Proving Correctness
 ```bash
-esbmc file.c --k-induction --overflow-check
-esbmc file.c --unwind 100 --multi-property      # Thorough bounded check
+# Step 1: detect CPUs
+nproc   # Linux; use `sysctl -n hw.ncpu` on macOS
+
+# Step 2a: >4 CPUs
+esbmc file.c --boolector --k-induction-parallel --overflow-check
+
+# Step 2b: ≤4 CPUs
+esbmc file.c --boolector --k-induction --overflow-check
+
+# Step 3: if k-induction times out or returns UNKNOWN, fall back to BMC
+esbmc file.c --show-loops   # then use --unwindset or --incremental-bmc
 ```
 
 ### Memory Safety Audit
 ```bash
-esbmc file.c --memory-leak-check --unwind 10
+esbmc file.c --boolector --unwindset L1:N --memory-leak-check
 ```
 
 ### Concurrency Verification
 ```bash
-esbmc threaded.c --deadlock-check --data-races-check --context-bound 2
+esbmc threaded.c --boolector --deadlock-check --data-races-check --context-bound 2
 ```
 
 For guidance on fixing verification failures, see `references/fixing-failures.md`.
