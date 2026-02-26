@@ -13,7 +13,6 @@
       "name": "esbmc-plugin",
       "source": "./esbmc-plugin",
       "description": "Verify C, C++, Python, Solidity, and Java/Kotlin programs for bugs, memory safety, undefined behavior, and more using ESBMC bounded model checker",
-      "version": "1.0.0",
       "author": {
         "name": "Paulo Matos",
         "email": "pmatos@igalia.com"
