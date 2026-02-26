@@ -28,16 +28,18 @@ Verify the specified source file using ESBMC bounded model checker.
    - `.sol` → Solidity file (use `--sol`)
    - `.cu` → CUDA file
 
-3. Build the ESBMC command based on the file type and requested checks:
+3. **Solver detection** — run `esbmc --list-solvers` and select the best available solver using this priority order: Boolector → Bitwuzla → Z3. Use the corresponding flag: `--boolector`, `--bitwuzla`, or `--z3`. If none of these solvers are listed as available, stop and tell the user that ESBMC is built without solver support, and direct them to build ESBMC with solver support: https://github.com/esbmc/esbmc
+
+4. **Loop discovery** — run `esbmc <file> --show-loops` to list all loops in the program. Then choose the unwind strategy:
+   - No loops found → no unwind flag needed
+   - Loops with bounds apparent from the source (e.g., `for (i = 0; i < N; i++)`) → use `--unwindset L1:N,...` with per-loop bounds derived from the source
+   - Loops with unknown or dynamic bounds → use `--incremental-bmc`
+
+5. Build and run the verification command using the detected solver flag, chosen unwind strategy, and any checks from the `checks` argument:
 
    **Base command:**
    ```bash
-   esbmc <file> --unwind 10 --timeout 60s
-   ```
-
-   **For Python** (no special flag needed, auto-detected by `.py` extension)**:**
-   ```bash
-   esbmc <file> --unwind 10 --timeout 60s
+   esbmc <file> <solver-flag> <unwind-strategy> --timeout 60s
    ```
 
    **Additional checks based on `checks` argument:**
@@ -46,14 +48,12 @@ Verify the specified source file using ESBMC bounded model checker.
    - `concurrent` → add `--deadlock-check --data-races-check --context-bound 2`
    - `all` → add all of the above
 
-4. Run the command using Bash tool
-
-5. Interpret the results:
+6. Interpret the results:
    - **VERIFICATION SUCCESSFUL** → All checked properties hold within bounds
    - **VERIFICATION FAILED** → Bug found, examine counterexample trace
    - **UNKNOWN/TIMEOUT** → Verification inconclusive
 
-6. If verification fails, provide:
+7. If verification fails, provide:
    - Summary of the violation type
    - Key parts of the counterexample trace
    - Suggestions for fixing the issue
