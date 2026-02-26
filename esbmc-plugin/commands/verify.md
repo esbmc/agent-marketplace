@@ -28,32 +28,40 @@ Verify the specified source file using ESBMC bounded model checker.
    - `.sol` → Solidity file (use `--sol`)
    - `.cu` → CUDA file
 
-3. Build the ESBMC command based on the file type and requested checks:
-
-   **Base command:**
+3. Discover loop structure by running:
    ```bash
-   esbmc <file> --unwind 10 --timeout 60s
+   esbmc <file> --show-loops
    ```
+   Examine the output to identify loop IDs and decide on an unwinding strategy:
+   - **If the file has no loops**, proceed directly with `--incremental-bmc`.
+   - **If loops are present and bounds are apparent from the source**, use `--unwindset <L1:N,L2:M,...>` with the specific loop IDs and counts shown by `--show-loops`.
+   - **If loops are present but bounds are unknown**, use `--incremental-bmc`.
 
-   **For Python** (no special flag needed, auto-detected by `.py` extension)**:**
-   ```bash
-   esbmc <file> --unwind 10 --timeout 60s
-   ```
-
-   **Additional checks based on `checks` argument:**
+4. Build the ESBMC command. Always use `--boolector` as the SMT solver. Add the
+   appropriate checks from the `checks` argument:
    - `memory` → add `--memory-leak-check`
    - `overflow` → add `--overflow-check --unsigned-overflow-check`
    - `concurrent` → add `--deadlock-check --data-races-check --context-bound 2`
    - `all` → add all of the above
 
-4. Run the command using Bash tool
+   **With `--incremental-bmc` (unknown loop bounds):**
+   ```bash
+   esbmc <file> --boolector --incremental-bmc --timeout 120s [checks]
+   ```
 
-5. Interpret the results:
+   **With `--unwindset` (known loop bounds):**
+   ```bash
+   esbmc <file> --boolector --unwindset <L1:N,...> --timeout 60s [checks]
+   ```
+
+5. Run the command using the Bash tool.
+
+6. Interpret the results:
    - **VERIFICATION SUCCESSFUL** → All checked properties hold within bounds
    - **VERIFICATION FAILED** → Bug found, examine counterexample trace
    - **UNKNOWN/TIMEOUT** → Verification inconclusive
 
-6. If verification fails, provide:
+7. If verification fails, provide:
    - Summary of the violation type
    - Key parts of the counterexample trace
    - Suggestions for fixing the issue
@@ -61,10 +69,10 @@ Verify the specified source file using ESBMC bounded model checker.
 ## Examples
 
 User: `/verify src/parser.c`
-→ Run basic verification on C file
+→ Run loop discovery, then incremental-bmc or unwindset as appropriate
 
 User: `/verify src/memory.c memory`
-→ Run with memory leak checking
+→ Run with memory leak checking added to the base command
 
 User: `/verify threaded.c concurrent`
 → Run with concurrency checks
