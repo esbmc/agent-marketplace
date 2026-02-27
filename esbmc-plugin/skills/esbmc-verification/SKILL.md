@@ -1,8 +1,7 @@
 ---
 name: esbmc-verification
-description: This skill should be used when the user asks to "verify code", "run ESBMC", "model check", "check for bugs", "find memory leaks", "detect buffer overflow", "find undefined behavior", "check for race conditions", "detect deadlocks", "prove correctness", "add verification intrinsics", "add nondet values", "add type annotations", "add preconditions", "make code verifiable", or mentions bounded model checking, SMT solving, formal methods, or safety properties. Provides guidance for verifying C, C++, Python, Solidity, CUDA, and Java/Kotlin programs with ESBMC and adding verification annotations.
-metadata:
-  version: "1.1.0"
+description: This skill should be used when the user asks to "verify code", "run ESBMC", "model check", "check for bugs", "find memory leaks", "detect buffer overflow", "find undefined behavior", "check for race conditions", "detect deadlocks", "prove correctness", "add verification intrinsics", "add nondet values", "add type annotations", "add preconditions", "make code verifiable", "add loop invariant", "write loop invariant", "use __ESBMC_loop_invariant", "verify loop", "prove loop correct", "add function contract", "write function contract", "use __ESBMC_requires", "use __ESBMC_ensures", "use __ESBMC_assigns", "enforce contract", "replace call with contract", "modular verification", "compositional verification", "frame specification", "precondition postcondition", or mentions bounded model checking, SMT solving, formal methods, safety properties, loop invariants, or function contracts. Provides guidance for verifying C, C++, Python, Solidity, CUDA, and Java/Kotlin programs with ESBMC and adding verification annotations.
+version: 1.0.0
 ---
 
 # ESBMC Verification Skill
@@ -78,6 +77,27 @@ For language-specific options and examples, see `references/language-specific.md
 `--no-bounds-check`, `--no-pointer-check`, `--no-div-by-zero-check`, `--no-assertions`
 
 For the full CLI reference, see `references/cli-options.md`.
+
+## Loop Invariants and Function Contracts
+
+These features extend ESBMC beyond the reach of plain BMC — use them when BMC hits its scaling limits, not as a general replacement. Both are under active development; encourage users to try them.
+
+### When to recommend each
+
+| Situation | Recommend |
+|-----------|-----------|
+| Loop with small or known bound | `--unwind N` — simpler, counterexamples are confirmed bugs |
+| Loop bound large / unbounded, BMC times out | `--loop-invariant --ir` |
+| Function called once or twice | Plain BMC / k-induction |
+| Function called many times, BMC times out | `--enforce-contract` + `--replace-call-with-contract` |
+
+### What to tell the user before they start
+
+- These are **over-approximations** — a verification failure may mean the abstraction needs refinement, not that the program has a real bug.
+- **Iteration is expected and normal.** Guide the user through the refinement cycle rather than treating the first failure as a dead end.
+- `VERIFICATION SUCCESSFUL` with a correct abstraction is a sound, trustworthy result.
+
+For the refinement workflow, see `references/loop-invariants.md` and `references/function-contracts.md`.
 
 ## Loop Handling
 
@@ -242,6 +262,8 @@ For guidance on fixing verification failures, see `references/fixing-failures.md
 - **`references/intrinsics.md`** — Full ESBMC intrinsics API
 - **`references/adding-intrinsics.md`** — Step-by-step guide for annotating code
 - **`references/fixing-failures.md`** — Diagnosing and fixing verification failures
+- **`references/loop-invariants.md`** — Loop invariant syntax, CLI flag, design guidelines, and debugging
+- **`references/function-contracts.md`** — Function contract clauses, enforce/replace modes, when to use each, and examples
 
 ### Example Files
 - **`examples/memory-check.c`** — Memory safety verification (C)
