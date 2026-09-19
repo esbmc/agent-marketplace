@@ -7,14 +7,19 @@
  * - Lock ordering violations
  * - Atomicity checks
  *
- * Run with: esbmc concurrent.c --deadlock-check --data-races-check --context-bound 2 --unwind 5
+ * Verify one example at a time:
+ *   esbmc concurrent.c --function safe_counter_example \
+ *         --deadlock-check --data-races-check --context-bound 2 --unwind 5
+ *
+ * Running main() explores all six safe examples together and does not finish
+ * at these bounds.
  */
 
 #include <pthread.h>
 #include <assert.h>
 
 // Non-deterministic input
-int __ESBMC_nondet_int(void);
+int __VERIFIER_nondet_int(void);
 void __ESBMC_assume(_Bool);
 void __ESBMC_assert(_Bool, const char *);
 
@@ -252,7 +257,7 @@ int out_idx = 0;
 pthread_mutex_t buffer_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void *producer(void *arg) {
-    int item = __ESBMC_nondet_int();
+    int item = __VERIFIER_nondet_int();
     __ESBMC_assume(item > 0);
 
     pthread_mutex_lock(&buffer_mutex);
@@ -369,7 +374,7 @@ void *reader(void *arg) {
 
 void *writer(void *arg) {
     pthread_mutex_lock(&rw_mutex);
-    shared_data = __ESBMC_nondet_int();
+    shared_data = __VERIFIER_nondet_int();
     __ESBMC_assume(shared_data >= 0);
     pthread_mutex_unlock(&rw_mutex);
 

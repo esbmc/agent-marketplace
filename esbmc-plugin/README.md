@@ -185,7 +185,7 @@ Use these in your source code for verification:
 ### C/C++
 ```c
 // Symbolic values
-int x = __ESBMC_nondet_int();
+int x = __VERIFIER_nondet_int();
 
 // Assumptions (constrain inputs)
 __ESBMC_assume(x > 0 && x < 100);
@@ -218,7 +218,7 @@ int main() {
     int *arr = malloc(10 * sizeof(int));
     __ESBMC_assume(arr != NULL);
 
-    int idx = __ESBMC_nondet_int();
+    int idx = __VERIFIER_nondet_int();
     __ESBMC_assume(idx >= 0 && idx < 10);
 
     arr[idx] = 42;

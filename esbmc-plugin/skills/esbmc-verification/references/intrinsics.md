@@ -16,43 +16,44 @@ Non-deterministic values represent any possible value of a type. Use them for sy
 
 ```c
 // Integer types
-int x = __ESBMC_nondet_int();
-unsigned int u = __ESBMC_nondet_uint();
-short s = __ESBMC_nondet_short();
-unsigned short us = __ESBMC_nondet_ushort();
-long l = __ESBMC_nondet_long();
-unsigned long ul = __ESBMC_nondet_ulong();
-long long ll = __ESBMC_nondet_longlong();
-unsigned long long ull = __ESBMC_nondet_ulonglong();
+int x = __VERIFIER_nondet_int();
+unsigned int u = __VERIFIER_nondet_uint();
+short s = __VERIFIER_nondet_short();
+unsigned short us = __VERIFIER_nondet_ushort();
+long l = __VERIFIER_nondet_long();
+unsigned long ul = __VERIFIER_nondet_ulong();
+long long ll = __VERIFIER_nondet_longlong();
+unsigned long long ull = __VERIFIER_nondet_ulonglong();
 
 // Character types
-char c = __ESBMC_nondet_char();
-unsigned char uc = __ESBMC_nondet_uchar();
-signed char sc = __ESBMC_nondet_schar();
+char c = __VERIFIER_nondet_char();
+unsigned char uc = __VERIFIER_nondet_uchar();
+signed char sc = __VERIFIER_nondet_schar();
 
 // Boolean
-_Bool b = __ESBMC_nondet_bool();
+_Bool b = __VERIFIER_nondet_bool();
 
 // Floating point
-float f = __ESBMC_nondet_float();
-double d = __ESBMC_nondet_double();
+float f = __VERIFIER_nondet_float();
+double d = __VERIFIER_nondet_double();
 
 // Pointer (creates symbolic pointer)
-void *p = __ESBMC_nondet_ptr();
+void *p = __VERIFIER_nondet_pointer();
 
 // Size type
-size_t sz = __ESBMC_nondet_size_t();
+size_t sz = __VERIFIER_nondet_size_t();
 ```
 
 ### Typed Non-Determinism
 
 ```c
 // Macro for any type
-#define nondet(type) __ESBMC_nondet_##type()
+#define nondet(type) __VERIFIER_nondet_##type()
 
 // Usage
 int x = nondet(int);
 float f = nondet(float);
+void *p = nondet(pointer);   // the suffix is `pointer`, not `ptr`
 ```
 
 ### Python Intrinsics
@@ -82,20 +83,20 @@ Assumptions constrain the possible values of symbolic variables. They guide veri
 __ESBMC_assume(condition);
 
 // Examples
-int x = __ESBMC_nondet_int();
+int x = __VERIFIER_nondet_int();
 __ESBMC_assume(x > 0);           // x is positive
 __ESBMC_assume(x < 100);         // x is less than 100
 __ESBMC_assume(x % 2 == 0);      // x is even
 
 // Array bounds assumption
 int arr[10];
-int idx = __ESBMC_nondet_int();
+int idx = __VERIFIER_nondet_int();
 __ESBMC_assume(idx >= 0 && idx < 10);
 arr[idx] = 42;  // Safe access
 
 // Multiple constraints
-int a = __ESBMC_nondet_int();
-int b = __ESBMC_nondet_int();
+int a = __VERIFIER_nondet_int();
+int b = __VERIFIER_nondet_int();
 __ESBMC_assume(a > 0 && a < 50);
 __ESBMC_assume(b > a);           // b > a > 0
 ```
@@ -119,11 +120,11 @@ assume(x < 100)
 
 ```c
 // Good: Clear, documented constraints
-int age = __ESBMC_nondet_int();
+int age = __VERIFIER_nondet_int();
 __ESBMC_assume(age >= 0 && age <= 150);  // Valid human age range
 
 // Bad: Over-constrained (only one value possible)
-int x = __ESBMC_nondet_int();
+int x = __VERIFIER_nondet_int();
 __ESBMC_assume(x == 42);  // Not actually symbolic anymore
 ```
 
@@ -150,13 +151,13 @@ __ESBMC_assert(result <= MAX_VALUE, "Result within bounds");
 ### Python Syntax
 
 ```python
-from esbmc import esbmc_assert
+from esbmc import __ESBMC_assert
 
 # Standard Python assert
 assert result >= 0
 
 # ESBMC assert with message
-esbmc_assert(result <= MAX_VALUE, "Result within bounds")
+__ESBMC_assert(result <= MAX_VALUE, "Result within bounds")
 ```
 
 ### Assertion Patterns
@@ -263,7 +264,7 @@ __ESBMC_assert(__ESBMC_buffer_size(ptr) >= required, "Buffer large enough");
 ```c
 // Explicit bounds checking
 int arr[10];
-int idx = __ESBMC_nondet_int();
+int idx = __VERIFIER_nondet_int();
 if (__ESBMC_is_valid_index(arr, idx)) {
     arr[idx] = value;
 }
@@ -336,7 +337,7 @@ int binary_search(int *arr, int size, int target) {
 }
 
 int main() {
-    int size = __ESBMC_nondet_int();
+    int size = __VERIFIER_nondet_int();
     __ESBMC_assume(size > 0 && size <= 100);
 
     int *arr = malloc(size * sizeof(int));
@@ -344,13 +345,13 @@ int main() {
 
     // Initialize sorted array symbolically
     for (int i = 0; i < size; i++) {
-        arr[i] = __ESBMC_nondet_int();
+        arr[i] = __VERIFIER_nondet_int();
         if (i > 0) {
             __ESBMC_assume(arr[i] >= arr[i-1]);  // Sorted
         }
     }
 
-    int target = __ESBMC_nondet_int();
+    int target = __VERIFIER_nondet_int();
     int result = binary_search(arr, size, target);
 
     // Postcondition
@@ -367,18 +368,18 @@ int main() {
 ## Python Complete Example
 
 ```python
-from esbmc import nondet_int, assume, esbmc_assert
+from esbmc import nondet_int, assume, __ESBMC_assert
 
 def binary_search(arr: list[int], target: int) -> int:
     """Verified binary search implementation."""
-    esbmc_assert(len(arr) > 0, "Array not empty")
+    __ESBMC_assert(len(arr) > 0, "Array not empty")
 
     left = 0
     right = len(arr) - 1
 
     while left <= right:
-        esbmc_assert(left >= 0, "Left bound valid")
-        esbmc_assert(right < len(arr), "Right bound valid")
+        __ESBMC_assert(left >= 0, "Left bound valid")
+        __ESBMC_assert(right < len(arr), "Right bound valid")
 
         mid = left + (right - left) // 2
 
@@ -410,8 +411,8 @@ def main():
     result = binary_search(arr, target)
 
     if result >= 0:
-        esbmc_assert(result < len(arr), "Result in bounds")
-        esbmc_assert(arr[result] == target, "Found correct element")
+        __ESBMC_assert(result < len(arr), "Result in bounds")
+        __ESBMC_assert(arr[result] == target, "Found correct element")
 
 if __name__ == "__main__":
     main()
@@ -421,7 +422,7 @@ if __name__ == "__main__":
 
 | Intrinsic | Purpose |
 |-----------|---------|
-| `__ESBMC_nondet_<type>()` | Create symbolic value |
+| `__VERIFIER_nondet_<type>()` | Create symbolic value |
 | `__ESBMC_assume(cond)` | Add constraint |
 | `__ESBMC_assert(cond, msg)` | Verify property |
 | `__ESBMC_unreachable()` | Mark unreachable code |

@@ -169,22 +169,22 @@ Use these in the source code to guide verification.
 
 | Purpose | C/C++ | Python |
 |---------|-------|--------|
-| Symbolic int | `__ESBMC_nondet_int()` | `nondet_int()` |
-| Symbolic uint | `__ESBMC_nondet_uint()` | N/A |
-| Symbolic bool | `__ESBMC_nondet_bool()` | `nondet_bool()` |
-| Symbolic float | `__ESBMC_nondet_float()` | `nondet_float()` |
+| Symbolic int | `__VERIFIER_nondet_int()` | `nondet_int()` |
+| Symbolic uint | `__VERIFIER_nondet_uint()` | N/A |
+| Symbolic bool | `__VERIFIER_nondet_bool()` | `nondet_bool()` |
+| Symbolic float | `__VERIFIER_nondet_float()` | `nondet_float()` |
 | Symbolic string | N/A | `nondet_str()` |
 | Symbolic list | N/A | `nondet_list()` |
 | Symbolic dictionary | N/A | `nondet_dict()` |
-| Assumption | `__ESBMC_assume(cond)` | `assume(cond)` |
-| Assertion | `__ESBMC_assert(cond, msg)` | `esbmc_assert(cond, msg)` |
+| Assumption | `__ESBMC_assume(cond)` | `__ESBMC_assume(cond)` |
+| Assertion | `__ESBMC_assert(cond, msg)` | `assert cond, msg` |
 | Atomic section | `__ESBMC_atomic_begin/end()` | N/A |
 
 ### Basic Usage
 
 ```c
-int x = __ESBMC_nondet_int();       // Symbolic input
-__ESBMC_assume(x > 0 && x < 100);   // Constrain input
+int x = __VERIFIER_nondet_int();     // Symbolic input
+__ESBMC_assume(x > 0 && x < 100);    // Constrain input
 __ESBMC_assert(result >= 0, "msg");  // Verify property
 ```
 

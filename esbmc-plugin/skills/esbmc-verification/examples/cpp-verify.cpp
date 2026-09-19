@@ -14,7 +14,7 @@
 #include <cassert>
 #include <vector>
 
-int __ESBMC_nondet_int(void);
+int __VERIFIER_nondet_int(void);
 void __ESBMC_assume(bool);
 void __ESBMC_assert(bool, const char *);
 
@@ -57,17 +57,17 @@ public:
 };
 
 void class_invariant_example() {
-    int cap = __ESBMC_nondet_int();
+    int cap = __VERIFIER_nondet_int();
     __ESBMC_assume(cap > 0 && cap <= 5);
 
     BoundedStack stack(cap);
     __ESBMC_assert(stack.is_empty(), "New stack is empty");
 
-    int n = __ESBMC_nondet_int();
+    int n = __VERIFIER_nondet_int();
     __ESBMC_assume(n >= 0 && n <= cap);
 
     for (int i = 0; i < n; i++) {
-        int val = __ESBMC_nondet_int();
+        int val = __VERIFIER_nondet_int();
         stack.push(val);
     }
 
@@ -87,7 +87,7 @@ void class_invariant_example() {
 void vector_verification_example() {
     std::vector<int> v;
 
-    int n = __ESBMC_nondet_int();
+    int n = __VERIFIER_nondet_int();
     __ESBMC_assume(n > 0 && n <= 5);
 
     for (int i = 0; i < n; i++) {
@@ -142,12 +142,12 @@ public:
 };
 
 void raii_example() {
-    int sz = __ESBMC_nondet_int();
+    int sz = __VERIFIER_nondet_int();
     __ESBMC_assume(sz > 0 && sz <= 10);
 
     Buffer buf(sz);
 
-    int idx = __ESBMC_nondet_int();
+    int idx = __VERIFIER_nondet_int();
     __ESBMC_assume(idx >= 0 && idx < sz);
 
     buf.set(idx, 42);
@@ -176,8 +176,8 @@ T clamp(T val, T lo, T hi) {
 }
 
 void template_example() {
-    int a = __ESBMC_nondet_int();
-    int b = __ESBMC_nondet_int();
+    int a = __VERIFIER_nondet_int();
+    int b = __VERIFIER_nondet_int();
     __ESBMC_assume(a >= -100 && a <= 100);
     __ESBMC_assume(b >= -100 && b <= 100);
 
@@ -188,7 +188,7 @@ void template_example() {
     int mn = safe_min(a, b);
     __ESBMC_assert(mn <= a && mn <= b, "Min is <= both inputs");
 
-    int val = __ESBMC_nondet_int();
+    int val = __VERIFIER_nondet_int();
     __ESBMC_assume(val >= -200 && val <= 200);
     int clamped = clamp(val, -100, 100);
     __ESBMC_assert(clamped >= -100 && clamped <= 100, "Clamped in range");
@@ -223,8 +223,8 @@ public:
 };
 
 void inheritance_example() {
-    int w = __ESBMC_nondet_int();
-    int h = __ESBMC_nondet_int();
+    int w = __VERIFIER_nondet_int();
+    int h = __VERIFIER_nondet_int();
     __ESBMC_assume(w >= 0 && w <= 100);
     __ESBMC_assume(h >= 0 && h <= 100);
 
@@ -232,7 +232,7 @@ void inheritance_example() {
     __ESBMC_assert(rect.area() == w * h, "Rectangle area correct");
     __ESBMC_assert(rect.area() >= 0, "Area is non-negative");
 
-    int side = __ESBMC_nondet_int();
+    int side = __VERIFIER_nondet_int();
     __ESBMC_assume(side >= 0 && side <= 100);
 
     Square sq(side);
@@ -270,8 +270,8 @@ public:
 };
 
 void operator_overload_example() {
-    int a_val = __ESBMC_nondet_int();
-    int b_val = __ESBMC_nondet_int();
+    int a_val = __VERIFIER_nondet_int();
+    int b_val = __VERIFIER_nondet_int();
     __ESBMC_assume(a_val >= -1000 && a_val <= 1000);
     __ESBMC_assume(b_val >= -1000 && b_val <= 1000);
 

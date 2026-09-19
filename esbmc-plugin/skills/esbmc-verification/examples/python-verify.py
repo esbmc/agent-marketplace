@@ -7,32 +7,22 @@ Demonstrates ESBMC's Python verification capabilities:
 - Non-deterministic inputs
 - List/array/dict operations
 
-Run with: esbmc python-verify.py --incremental-bmc --no-pointer-check --k-step 2 --bitwuzla
+Run with: esbmc python-verify.py --incremental-bmc --no-pointer-check --k-step 2
+(ESBMC picks a solver it was built with; run `esbmc --list-solvers` to see them.)
+
+The whole file does not finish in reasonable time; test_dict_operations alone
+runs for minutes. Trim main() to the tests you want to check.
+
+This file is for ESBMC, not for `python3`. nondet_int(), __ESBMC_assume() and
+the rest are ESBMC intrinsics with no Python binding, so plain Python stops at
+the first one with a NameError. Do not define them here either: ESBMC treats
+them as intrinsics only while they are undefined, and a Python body makes every
+check below vacuous.
 """
-
-# ESBMC Python intrinsics (available when running under ESBMC)
-# In real code, these would be imported from esbmc module
-# For standalone testing, we provide stubs
-
-import random
-def nondet_int() -> int:
-    return random.randint(-1000, 1000)
-def nondet_float() -> float:
-    return random.uniform(-1000, 1000)
-def nondet_bool() -> bool:
-    return random.choice([True, False])
-def __ESBMC_assume(cond: bool) -> None:
-    if not cond:
-        raise ValueError("Assumption violated")
-def __ESBMC_assert(cond: bool, msg: str) -> None:
-    assert cond, msg
-
 
 # ============================================
 # Example 1: Simple Function Verification
 # ============================================
-
-from esbmc import nondet_int, __ESBMC_assume
 
 def absolute_value(x: int) -> int:
     """Compute absolute value."""
@@ -54,7 +44,6 @@ def test_absolute_value() -> None:
     # Property: result equals x or -x
     assert result == x or result == -x, "Result is x or -x"
 
-test_absolute_value()
 
 # ============================================
 # Example 2: List Operations
@@ -97,7 +86,6 @@ def test_find_max() -> None:
     for elem in lst:
         assert elem <= result, "No element exceeds max"
 
-test_find_max()
 
 # ============================================
 # Example 3: Binary Search Verification
@@ -156,7 +144,6 @@ def test_binary_search() -> None:
         assert result < len(arr), "Index in bounds"
         assert arr[result] == target, "Found element matches target"
 
-test_binary_search()
 
 # ============================================
 # Example 4: Safe Division
@@ -185,7 +172,6 @@ def test_safe_divide() -> None:
         # Note: integer division truncates
         assert result * b <= a or result * b >= a, "Division lower bound"
 
-test_safe_divide()
 
 # ============================================
 # Example 5: Factorial with Bounds
@@ -220,7 +206,6 @@ def test_factorial() -> None:
     if n >= 1:
         assert result >= n, "Factorial >= input"
 
-test_factorial()
 
 # ============================================
 # Example 6: String Operations
@@ -245,7 +230,6 @@ def test_palindrome() -> None:
 
     assert True, "Palindrome tests passed"
 
-test_palindrome()
 
 # ============================================
 # Example 7: Stack Implementation
@@ -299,7 +283,6 @@ def test_stack() -> None:
         top = top - 1
         assert top == old_size - 1, "Pop decreases size"
 
-test_stack()
 
 # ============================================
 # Example 8: Sorting Verification
@@ -348,7 +331,6 @@ def test_bubble_sort() -> None:
     # Property: same length
     assert len(sorted_arr) == len(arr), "Length preserved"
 
-test_bubble_sort()
 
 # ============================================
 # Example 9: String Validation with nondet_str
@@ -400,7 +382,6 @@ def test_email_validation() -> None:
     if len(email) == 0:
         assert not result, "Empty string is not valid email"
 
-test_email_validation()
 
 # ============================================
 # Example 10: List Operations with nondet_list
@@ -466,7 +447,6 @@ def test_remove_duplicates() -> None:
     if not input_has_dups:
         assert len(result) == len(lst), "No change if no duplicates"
 
-test_remove_duplicates()
 
 # ============================================
 # Example 11: Dictionary Operations with nondet_dict
@@ -544,7 +524,6 @@ def test_dict_operations() -> None:
                     break
             assert found, "All matching keys are found"
 
-test_dict_operations()
 
 # ============================================
 # Example 12: Linear Search
@@ -589,7 +568,6 @@ def test_linear_search() -> None:
 
     result: int = linear_search(A, n, x)
 
-test_linear_search()
 
 # ============================================
 # Example 13: Two Sum
@@ -653,7 +631,6 @@ def test_two_sum() -> None:
             for q in range(p + 1, n):
                 assert nums[p] + nums[q] != target, "No valid pair exists"
 
-test_two_sum()
 
 
 # ============================================

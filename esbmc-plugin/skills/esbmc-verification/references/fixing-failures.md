@@ -63,7 +63,7 @@ Run ESBMC again to confirm the fix works.
 ### Python-Specific Errors
 - Ensure all functions have type annotations
 - Use Python 3.10+
-- Import ESBMC intrinsics correctly: `from esbmc import nondet_int, assume, esbmc_assert`
+- Import ESBMC intrinsics correctly: `from esbmc import nondet_int, assume, __ESBMC_assert`
 - Use `--strict-types` for stricter type checking
 
 ### C++-Specific Errors

@@ -14,15 +14,15 @@
 #include <assert.h>
 
 // Non-deterministic input for symbolic verification
-int __ESBMC_nondet_int(void);
-unsigned int __ESBMC_nondet_uint(void);
+int __VERIFIER_nondet_int(void);
+unsigned int __VERIFIER_nondet_uint(void);
 void __ESBMC_assume(_Bool);
 void __ESBMC_assert(_Bool, const char *);
 
 /* Example 1: Signed Addition Overflow */
 void signed_addition_overflow(void) {
-    int a = __ESBMC_nondet_int();
-    int b = __ESBMC_nondet_int();
+    int a = __VERIFIER_nondet_int();
+    int b = __VERIFIER_nondet_int();
 
     // Without constraints, this can overflow
     int result = a + b;  // ESBMC detects overflow
@@ -43,8 +43,8 @@ int safe_add(int a, int b) {
 }
 
 void safe_addition_example(void) {
-    int a = __ESBMC_nondet_int();
-    int b = __ESBMC_nondet_int();
+    int a = __VERIFIER_nondet_int();
+    int b = __VERIFIER_nondet_int();
 
     int result = safe_add(a, b);
 
@@ -54,8 +54,8 @@ void safe_addition_example(void) {
 
 /* Example 3: Signed Multiplication Overflow */
 void signed_multiplication_overflow(void) {
-    int a = __ESBMC_nondet_int();
-    int b = __ESBMC_nondet_int();
+    int a = __VERIFIER_nondet_int();
+    int b = __VERIFIER_nondet_int();
 
     // Multiplication can easily overflow
     int result = a * b;  // ESBMC detects overflow
@@ -81,8 +81,8 @@ int safe_multiply(int a, int b) {
 }
 
 void safe_multiplication_example(void) {
-    int a = __ESBMC_nondet_int();
-    int b = __ESBMC_nondet_int();
+    int a = __VERIFIER_nondet_int();
+    int b = __VERIFIER_nondet_int();
 
     // Constrain to reasonable values for demonstration
     __ESBMC_assume(a >= -1000 && a <= 1000);
@@ -94,8 +94,8 @@ void safe_multiplication_example(void) {
 
 /* Example 5: Unsigned Overflow (Wrap-around) */
 void unsigned_overflow_example(void) {
-    unsigned int a = __ESBMC_nondet_uint();
-    unsigned int b = __ESBMC_nondet_uint();
+    unsigned int a = __VERIFIER_nondet_uint();
+    unsigned int b = __VERIFIER_nondet_uint();
 
     // Unsigned arithmetic wraps around (well-defined but often unintended)
     unsigned int result = a + b;  // ESBMC with --unsigned-overflow-check detects this
@@ -110,8 +110,8 @@ unsigned int safe_unsigned_add(unsigned int a, unsigned int b) {
 }
 
 void safe_unsigned_example(void) {
-    unsigned int a = __ESBMC_nondet_uint();
-    unsigned int b = __ESBMC_nondet_uint();
+    unsigned int a = __VERIFIER_nondet_uint();
+    unsigned int b = __VERIFIER_nondet_uint();
 
     unsigned int result = safe_unsigned_add(a, b);
     __ESBMC_assert(result >= a || result >= b, "No unexpected wrap");
@@ -120,7 +120,7 @@ void safe_unsigned_example(void) {
 /* Example 7: Array Index Overflow */
 void array_index_overflow(void) {
     int arr[100];
-    int i = __ESBMC_nondet_int();
+    int i = __VERIFIER_nondet_int();
 
     // Index computation can overflow
     int idx = i * 2 + 10;  // Can overflow if i is large
@@ -134,7 +134,7 @@ void array_index_overflow(void) {
 /* Example 8: Safe Array Index Computation */
 void safe_array_index(void) {
     int arr[100];
-    int i = __ESBMC_nondet_int();
+    int i = __VERIFIER_nondet_int();
 
     // Constrain input to prevent overflow in index computation
     __ESBMC_assume(i >= 0 && i < 45);  // Ensures i*2+10 < 100 and no overflow
@@ -147,8 +147,8 @@ void safe_array_index(void) {
 
 /* Example 9: Shift Operation Overflow */
 void shift_overflow_example(void) {
-    int x = __ESBMC_nondet_int();
-    int shift = __ESBMC_nondet_int();
+    int x = __VERIFIER_nondet_int();
+    int shift = __VERIFIER_nondet_int();
 
     // Left shift can overflow
     // Also UB if shift < 0 or shift >= bit width
@@ -157,8 +157,8 @@ void shift_overflow_example(void) {
 
 /* Example 10: Safe Shift Operation */
 void safe_shift_example(void) {
-    int x = __ESBMC_nondet_int();
-    int shift = __ESBMC_nondet_int();
+    int x = __VERIFIER_nondet_int();
+    int shift = __VERIFIER_nondet_int();
 
     // Constrain shift amount
     __ESBMC_assume(shift >= 0 && shift < 31);
@@ -172,7 +172,7 @@ void safe_shift_example(void) {
 
 /* Example 11: Negation Overflow */
 void negation_overflow_example(void) {
-    int x = __ESBMC_nondet_int();
+    int x = __VERIFIER_nondet_int();
 
     // Negating INT_MIN overflows
     int neg = -x;  // UB if x == INT_MIN
@@ -187,7 +187,7 @@ int safe_negate(int x) {
 }
 
 void safe_negation_example(void) {
-    int x = __ESBMC_nondet_int();
+    int x = __VERIFIER_nondet_int();
     int result = safe_negate(x);
 
     __ESBMC_assert(result != INT_MIN || x == INT_MIN, "Negation handled correctly");
@@ -195,8 +195,8 @@ void safe_negation_example(void) {
 
 /* Example 13: Division Overflow */
 void division_overflow_example(void) {
-    int a = __ESBMC_nondet_int();
-    int b = __ESBMC_nondet_int();
+    int a = __VERIFIER_nondet_int();
+    int b = __VERIFIER_nondet_int();
 
     // Division by zero and INT_MIN / -1 are both UB
     int result = a / b;  // ESBMC detects div-by-zero
@@ -214,8 +214,8 @@ int safe_divide(int a, int b) {
 }
 
 void safe_division_example(void) {
-    int a = __ESBMC_nondet_int();
-    int b = __ESBMC_nondet_int();
+    int a = __VERIFIER_nondet_int();
+    int b = __VERIFIER_nondet_int();
 
     int result = safe_divide(a, b);
     __ESBMC_assert(result >= INT_MIN && result <= INT_MAX, "Division safe");
@@ -238,7 +238,7 @@ unsigned long long factorial(int n) {
 }
 
 void factorial_example(void) {
-    int n = __ESBMC_nondet_int();
+    int n = __VERIFIER_nondet_int();
     __ESBMC_assume(n >= 0 && n <= 20);  // 20! fits in unsigned long long
 
     unsigned long long result = factorial(n);

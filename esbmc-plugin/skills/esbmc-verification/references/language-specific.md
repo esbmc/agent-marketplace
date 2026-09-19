@@ -180,14 +180,14 @@ def find_max(lst: list[int]) -> int:
 ### Python Intrinsics
 
 ```python
-from esbmc import nondet_int, assume, esbmc_assert
+from esbmc import nondet_int, assume, __ESBMC_assert
 
 def verify_abs():
     x: int = nondet_int()
     assume(x >= -100 and x <= 100)
 
     result = abs(x)
-    esbmc_assert(result >= 0, "abs returns non-negative")
+    __ESBMC_assert(result >= 0, "abs returns non-negative")
 ```
 
 ### Python Verification Example

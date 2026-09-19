@@ -142,7 +142,7 @@ Claude will use the ESBMC skill to:
 ```c
 #include <stdlib.h>
 
-int __ESBMC_nondet_int(void);
+int __VERIFIER_nondet_int(void);
 void __ESBMC_assume(_Bool);
 void __ESBMC_assert(_Bool, const char *);
 
@@ -164,7 +164,7 @@ int binary_search(int *arr, int size, int target) {
 }
 
 int main() {
-    int size = __ESBMC_nondet_int();
+    int size = __VERIFIER_nondet_int();
     __ESBMC_assume(size > 0 && size <= 20);
 
     int *arr = malloc(size * sizeof(int));
@@ -172,11 +172,11 @@ int main() {
 
     // Fill with sorted symbolic values
     for (int i = 0; i < size; i++) {
-        arr[i] = __ESBMC_nondet_int();
+        arr[i] = __VERIFIER_nondet_int();
         if (i > 0) __ESBMC_assume(arr[i] >= arr[i-1]);
     }
 
-    int target = __ESBMC_nondet_int();
+    int target = __VERIFIER_nondet_int();
     int result = binary_search(arr, size, target);
 
     if (result >= 0) {
@@ -207,7 +207,7 @@ Create `stack_test.cpp`:
 #include <vector>
 #include <cassert>
 
-int __ESBMC_nondet_int(void);
+int __VERIFIER_nondet_int(void);
 void __ESBMC_assume(bool);
 void __ESBMC_assert(bool, const char *);
 
@@ -237,7 +237,7 @@ public:
 };
 
 int main() {
-    int cap = __ESBMC_nondet_int();
+    int cap = __VERIFIER_nondet_int();
     __ESBMC_assume(cap > 0 && cap <= 5);
 
     SafeStack s(cap);
@@ -408,8 +408,8 @@ Claude will automatically use the ESBMC skill when these topics come up, providi
 
 **C/C++:**
 ```c
-int x = __ESBMC_nondet_int();       // Symbolic input
-__ESBMC_assume(x > 0 && x < 100);   // Constrain
+int x = __VERIFIER_nondet_int();     // Symbolic input
+__ESBMC_assume(x > 0 && x < 100);    // Constrain
 __ESBMC_assert(result >= 0, "msg");  // Verify
 ```
 
