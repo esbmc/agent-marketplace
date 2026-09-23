@@ -21,7 +21,7 @@ This is a **Claude Code plugin** (not a traditional application). There is no bu
 ## Workflow Preferences
 
 - Never commit or push automatically. Always show proposed changes and get explicit approval first.
-- When facing a non-trivial change, brainstorm approaches and present options before implementing anything.
+- Keep going when a step doesn't need input from the user. Stop and ask only when you can't continue without the user, or before a destructive/irreversible action.
 - When intent is unclear or multiple reasonable paths exist, ask rather than assume.
 
 ## Development
