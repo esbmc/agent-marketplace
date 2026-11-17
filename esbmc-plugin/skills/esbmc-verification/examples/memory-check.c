@@ -14,14 +14,14 @@
 #include <assert.h>
 
 // Non-deterministic input for symbolic verification
-int __ESBMC_nondet_int(void);
+int __VERIFIER_nondet_int(void);
 void __ESBMC_assume(_Bool);
 void __ESBMC_assert(_Bool, const char *);
 
 /* Example 1: Buffer Overflow Detection */
 void buffer_overflow_example(void) {
     int arr[10];
-    int idx = __ESBMC_nondet_int();
+    int idx = __VERIFIER_nondet_int();
 
     // Without this assumption, ESBMC will find the buffer overflow
     // Uncomment to make verification pass:
@@ -34,7 +34,7 @@ void buffer_overflow_example(void) {
 /* Example 2: Safe Array Access */
 void safe_array_access(void) {
     int arr[10];
-    int idx = __ESBMC_nondet_int();
+    int idx = __VERIFIER_nondet_int();
 
     // Properly constrained index
     __ESBMC_assume(idx >= 0 && idx < 10);
@@ -55,7 +55,7 @@ int *create_array(int size) {
 }
 
 void null_pointer_example(void) {
-    int size = __ESBMC_nondet_int();
+    int size = __VERIFIER_nondet_int();
     int *arr = create_array(size);
 
     // Without null check, ESBMC detects potential null dereference
@@ -69,7 +69,7 @@ void null_pointer_example(void) {
 
 /* Example 4: Safe Null Handling */
 void safe_null_handling(void) {
-    int size = __ESBMC_nondet_int();
+    int size = __VERIFIER_nondet_int();
     __ESBMC_assume(size > 0 && size <= 100);
 
     int *arr = create_array(size);
@@ -125,13 +125,13 @@ void use_after_free_example(void) {
 
 /* Example 9: Dynamic Array with Bounds Checking */
 void dynamic_array_bounds(void) {
-    int size = __ESBMC_nondet_int();
+    int size = __VERIFIER_nondet_int();
     __ESBMC_assume(size > 0 && size <= 50);
 
     int *arr = (int *)malloc(size * sizeof(int));
     __ESBMC_assume(arr != NULL);
 
-    int idx = __ESBMC_nondet_int();
+    int idx = __VERIFIER_nondet_int();
     __ESBMC_assume(idx >= 0 && idx < size);
 
     // Safe access within bounds
@@ -171,14 +171,14 @@ void destroy_container(Container *c) {
 }
 
 void container_example(void) {
-    int size = __ESBMC_nondet_int();
+    int size = __VERIFIER_nondet_int();
     __ESBMC_assume(size > 0 && size <= 20);
 
     Container *c = create_container(size);
 
     if (c != NULL) {
         // Safe access
-        int idx = __ESBMC_nondet_int();
+        int idx = __VERIFIER_nondet_int();
         __ESBMC_assume(idx >= 0 && idx < c->size);
 
         c->data[idx] = 42;

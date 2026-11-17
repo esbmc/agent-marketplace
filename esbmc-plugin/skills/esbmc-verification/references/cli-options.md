@@ -31,6 +31,7 @@
 | `--show-vcc` | Show verification conditions |
 | `--show-stacktrace` | Show stack trace in counterexample |
 | `--goto2c` | Translate GOTO to C |
+| `--goto2lean` | Translate GOTO to Lean 4 (prototype, scalar fragment) |
 | `--color` | Colored output |
 | `--quiet` | Suppress unwinding info |
 
@@ -42,6 +43,7 @@
 | `--ssa-trace` | Print SSA during SMT encoding |
 | `--ssa-smt-trace` | Print SMT during encoding |
 | `--symex-ssa-trace` | Print SSA during symex |
+| `--show-funccall-trace` | Chronological function calls leading to the counterexample |
 | `--log-message` | Print LOG with file/line/timestamp |
 | `--verbosity <module:N>` | Set log-level for modules |
 
@@ -76,14 +78,25 @@
 | `--override-return-annotation` | Override return type with inferred |
 | `--strict-types` | Strict type checking |
 | `--nondet-str-length <n>` | Max nondet string length (default: 16) |
+| `--python-no-fold` | Disable NumPy constant folding |
+| `--python-list-compare-depth <n>` | Max nesting depth for list comparison (default: 4) |
 | `--generate-pytest-testcase` | Generate pytest from solution |
+| `--pytest-output-dir <dir>` | Directory for generated pytest files (default: `esbmc-pytest`) |
+| `--python-typecheck` | Type-check the input with `mypy --strict` and print the report |
+| `--python-ignore-assertions` | Treat the program's own `assert` as assumptions, keep exception checks (unlike `--no-assertions`) |
+| `--python-check-exceptions <types>` | Report only uncaught exceptions of these types (comma-separated, subclasses included); other exceptions end their path unreported |
+| `--python-math-ulps <n>` | Ulps a math/NumPy transcendental result may differ from the C library (default 8; 0 = correctly rounded) |
+| `--no-python-typed-lists` | Disable the int64-array storage for all-int lists (typed lists are on by default) |
+| `--pytest-values-only` | Record counterexample as a `witness` list instead of a runnable test |
 
 ## Solidity Frontend Options
 
 | Option | Description |
 |--------|-------------|
 | `--sol <path>` | Solidity file names |
+| `--solc-bin <path>` | Path to `solc` (default: `$SOLC` or `solc` in `$PATH`) |
 | `--contract <name>` | Set contract name |
+| `--focus-function <name>` | Verify only the named public/external function; constructor and state initialization still run (needs `--contract` with several contracts) |
 | `--no-visibility` | Verify unreachable functions |
 | `--unbound` | Model external calls as arbitrary |
 | `--bound` | Model inter-contract calls bounded |
@@ -106,7 +119,17 @@
 | `--atomicity-check` | Atomicity at assignments |
 | `--nan-check` | Floating-point NaN |
 | `--ub-shift-check` | UB on shift operations |
-| `--vla-size-check` | VLA size overflow |
+| `--clz-zero-check` | UB on `__builtin_clz` of zero |
+| `--uninitialised-vars-check` | Reads of uninitialised locals (CWE-457) |
+| `--unchecked-return-value-check` | Unchecked return values of fallible calls (CWE-252) |
+| `--excessive-alloc-check[=bytes]` | Allocation sizes above a bound, default 1 MiB (CWE-789). Attach the value with `=`; a space-separated value is read as an input file |
+| `--volatile-check` | Volatile variable accesses |
+| `--restrict-check` | `restrict` pointer parameters must not alias |
+| `--restrict-assume` | Assume entry-function `restrict` parameters do not alias |
+| `--unknown-method-args-check` | Pointer arguments passed to unknown calls |
+| `--total-stack-limit <bits>` | Bound the combined size of live stack frames |
+| `--dead-store-check` | Advisory notes for dead stores (CWE-563), does not flip the verdict |
+| `--dead-code-check` | Advisory notes for provably unreachable branch directions (CWE-561). A SUCCESSFUL verdict of this run is not a safety verdict: run it next to a normal verification |
 | `--printf-check` | Printf pointer validation |
 | `--struct-fields-check` | Struct over-read checks |
 | `--is-instance-check` | Runtime isinstance |
@@ -123,6 +146,10 @@
 | `--no-pointer-check` | Skip pointer safety |
 | `--no-align-check` | Skip alignment check |
 | `--no-unlimited-scanf-check` | Skip scanf overflow |
+| `--no-vla-size-check` | Skip VLA size check |
+| `--no-fp-conversion-check` | Skip the range check on float-to-integer conversions (rest of `--overflow-check` stays) |
+| `--no-fp-overflow-check` | Skip floating-point overflow check (integer overflow checks stay) |
+| `--no-library-assertions` | Ignore assertions from ESBMC's operational models, keep user ones (unsupported for Python; can hide real API misuse) |
 | `--no-standard-checks` | Disable all default checks |
 
 ### Memory Options
@@ -167,6 +194,16 @@
 | `--show-cex` | Print counterexample from step |
 | `--goto-contractor` | Contractor-based refinement |
 
+### Loop Invariants
+
+| Option | Description |
+|--------|-------------|
+| `--loop-invariant` | Loop invariant + k-induction (still unwinds the loop) |
+| `--loop-invariant-check` | Havoc abstraction, cost independent of the loop bound |
+| `--loop-frame-rule` | Snapshot-havoc-assume frame rule (needs `--loop-invariant-check`) |
+| `--synthesise-loop-invariants` | Synthesise invariants for affine counter/accumulator loops; implies `--loop-invariant-check`, `--check-vacuity`, `--multi-property` |
+| `--check-vacuity` / `--no-vacuity-check` | Report UNKNOWN on vacuous discharge (default on with loop invariants) |
+
 ### Incremental BMC
 
 | Option | Description |
@@ -183,6 +220,10 @@
 | `--parallel-solving` | Solve VCCs in parallel |
 | `--multi-fail-fast <n>` | Stop after n violations |
 | `--keep-verified-claims` | Don't skip verified claims |
+| `--all-witnesses` | After a failure, enumerate more violating inputs (implies `--multi-property`) |
+| `--max-witnesses <n>` | Cap per property (default 16, 0 = unlimited) |
+| `--report-unreached-claims` | List claims no path reaches within the bound as vacuously passed |
+| `--proof-cache <dir>` | Reuse proofs from earlier runs (needs `--multi-property`) |
 
 ### Incremental SMT
 
@@ -209,13 +250,18 @@
 | `--smtlib-solver-prog <name>` | SMT-LIB solver program |
 | `--list-solvers` | List available solvers |
 | `--default-solver <solver>` | Override default solver |
+| `--bitwuzla-opt <name=value>` | Pass an option to Bitwuzla (repeatable) |
 | `--bv` | Bit-vector arithmetic |
 | `--ir` | Integer/real arithmetic |
+| `--ir-ieee` | Integer/real arithmetic with real-arithmetic enclosures for floats |
 
 ### Floating-Point Encoding
 
 | Option | Description |
 |--------|-------------|
+| `--round-to-nearest` / `--round-to-even` | Rounding mode (default) |
+| `--round-to-plus-inf`, `--round-to-minus-inf`, `--round-to-zero` | Other rounding modes |
+| `--fp-taylor-terms <n>` | Taylor terms (2 to 12, default 8) for exp/log/pow models |
 | `--floatbv` | SMT FP theory (default) |
 | `--fixedbv` | Fixed bit-vectors |
 | `--fp2bv` | Encode as bit-vectors |
@@ -262,6 +308,9 @@
 | `--no-por` | Disable partial order reduction |
 | `--all-runs` | Check all interleavings |
 | `--schedule` | Use schedule recording |
+| `--incremental-context-bound` | Raise the context bound each round (max `--max-context-bound`, default 20) |
+| `--falsify-context-bound <n>` | Search for violations with bounds 1..n first; no proof claimed |
+| `--sleep-sets` | Sleep-set pruning (experimental; pair with `--no-por`) |
 
 ### Code Coverage
 
@@ -271,6 +320,9 @@
 | `--condition-coverage` | Condition coverage |
 | `--branch-coverage` | Branch coverage |
 | `--branch-function-coverage` | Branch + function coverage |
+| `--k-path-coverage[=N]` | k-path witness coverage |
+| `--cov-report-json` | Write `cov-report.json` |
+| `--coverage-covered-set <path>` | Persist covered edges across runs (`--branch-coverage`) |
 
 ### Function Contracts
 
@@ -278,6 +330,8 @@
 |--------|-------------|
 | `--enforce-contract <fn>` | Check contract (* for all) |
 | `--replace-call-with-contract <fn>` | Replace with contract |
+| `--enforce-all-contracts` | Enforce every function marked `__ESBMC_contract` |
+| `--replace-all-contracts` | Replace calls to every function marked `__ESBMC_contract` |
 
 ## Optimization
 
@@ -289,6 +343,7 @@
 | `--slice-assumes` | Remove unused assumes |
 | `--compact-trace` | Exclude non-user assignments |
 | `--simplify-trace` | Simplify trace |
+| `--scalarize-structs` | Per-field variables for structs whose address is never taken |
 | `--no-simplify` | Don't simplify expressions |
 | `--no-propagation` | Disable constant propagation |
 | `--gcse` | Common sub-expression elimination |
@@ -298,6 +353,7 @@
 | Option | Description |
 |--------|-------------|
 | `--witness-output <path>` | YAML + GraphML witness |
+| `--sarif-output <path\|->` | SARIF 2.1.0 report, results annotated with CWE ids |
 | `--witness-output-graphml <path>` | GraphML witness |
 | `--witness-output-yaml <path>` | YAML witness |
 | `--witness-producer <string>` | Witness producer metadata |

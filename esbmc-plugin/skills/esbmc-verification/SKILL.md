@@ -1,7 +1,7 @@
 ---
 name: esbmc-verification
 description: This skill should be used when the user asks to "verify code", "run ESBMC", "model check", "check for bugs", "find memory leaks", "detect buffer overflow", "find undefined behavior", "check for race conditions", "detect deadlocks", "prove correctness", "add verification intrinsics", "add nondet values", "add type annotations", "add preconditions", "make code verifiable", "add loop invariant", "write loop invariant", "use __ESBMC_loop_invariant", "verify loop", "prove loop correct", "add function contract", "write function contract", "use __ESBMC_requires", "use __ESBMC_ensures", "use __ESBMC_assigns", "enforce contract", "replace call with contract", "modular verification", "compositional verification", "frame specification", "precondition postcondition", or mentions bounded model checking, SMT solving, formal methods, safety properties, loop invariants, or function contracts. Provides guidance for verifying C, C++, Python, Solidity, CUDA, and Java/Kotlin programs with ESBMC and adding verification annotations.
-version: 1.0.0
+version: 1.2.0
 ---
 
 # ESBMC Verification Skill
@@ -72,9 +72,12 @@ For language-specific options and examples, see `references/language-specific.md
 - `--nan-check`: Floating-point NaN
 - `--ub-shift-check`: Undefined shift behavior
 - `--is-instance-check`: Enable runtime isinstance assertions for annotated Python code
+- `--uninitialised-vars-check` (CWE-457), `--unchecked-return-value-check` (CWE-252), `--excessive-alloc-check[=bytes]` (CWE-789): C/C++ weakness classes
+- `--restrict-check`, `--volatile-check`, `--clz-zero-check`: C-specific UB checks
+- `--dead-code-check`, `--dead-store-check`: advisory findings (CWE-561, CWE-563) that never flip the verdict; run them next to a normal verification, not instead of one
 
 ### Disable Specific Checks
-`--no-bounds-check`, `--no-pointer-check`, `--no-div-by-zero-check`, `--no-assertions`
+`--no-bounds-check`, `--no-pointer-check`, `--no-div-by-zero-check`, `--no-assertions`, `--no-vla-size-check`, `--no-library-assertions`, `--no-fp-overflow-check`, `--no-fp-conversion-check`
 
 For the full CLI reference, see `references/cli-options.md`.
 
@@ -144,13 +147,15 @@ Choose a high-level path before running any checks:
 | Prove correctness (>4 CPUs) | k-Induction parallel | `--k-induction-parallel` |
 | All violations | Multi-property | `--multi-property` |
 | Large programs | Incremental SMT | `--smt-during-symex` |
+| Affine loops, no manual invariant | Invariant synthesis | `--synthesise-loop-invariants` |
+| Re-verifying with small changes | Proof cache | `--multi-property --proof-cache <dir>` |
 | Concurrent code | Context-bounded | `--context-bound 3` |
 
 For detailed descriptions of the strategies and their configurations, see `references/verification-strategies.md`.
 
 ## Solver Selection
 
-Always detect available solvers via `--list-solvers` rather than assuming one is present. Use the best available solver by priority: **Boolector → Bitwuzla → Z3**.
+Always detect available solvers via `--list-solvers` rather than assuming one is present. Bitwuzla is ESBMC's default when built in. Use the best available solver by priority: **Boolector → Bitwuzla → Z3**.
 
 ```bash
 esbmc --list-solvers      # Detect available solvers
@@ -169,22 +174,22 @@ Use these in the source code to guide verification.
 
 | Purpose | C/C++ | Python |
 |---------|-------|--------|
-| Symbolic int | `__ESBMC_nondet_int()` | `nondet_int()` |
-| Symbolic uint | `__ESBMC_nondet_uint()` | N/A |
-| Symbolic bool | `__ESBMC_nondet_bool()` | `nondet_bool()` |
-| Symbolic float | `__ESBMC_nondet_float()` | `nondet_float()` |
+| Symbolic int | `__VERIFIER_nondet_int()` | `nondet_int()` |
+| Symbolic uint | `__VERIFIER_nondet_uint()` | N/A |
+| Symbolic bool | `__VERIFIER_nondet_bool()` | `nondet_bool()` |
+| Symbolic float | `__VERIFIER_nondet_float()` | `nondet_float()` |
 | Symbolic string | N/A | `nondet_str()` |
 | Symbolic list | N/A | `nondet_list()` |
 | Symbolic dictionary | N/A | `nondet_dict()` |
-| Assumption | `__ESBMC_assume(cond)` | `assume(cond)` |
-| Assertion | `__ESBMC_assert(cond, msg)` | `esbmc_assert(cond, msg)` |
+| Assumption | `__ESBMC_assume(cond)` | `__ESBMC_assume(cond)` |
+| Assertion | `__ESBMC_assert(cond, msg)` | `assert cond, msg` |
 | Atomic section | `__ESBMC_atomic_begin/end()` | N/A |
 
 ### Basic Usage
 
 ```c
-int x = __ESBMC_nondet_int();       // Symbolic input
-__ESBMC_assume(x > 0 && x < 100);   // Constrain input
+int x = __VERIFIER_nondet_int();     // Symbolic input
+__ESBMC_assume(x > 0 && x < 100);    // Constrain input
 __ESBMC_assert(result >= 0, "msg");  // Verify property
 ```
 
@@ -205,6 +210,9 @@ esbmc file.c --witness-output w.graphml # Generate witness file
 esbmc file.c --show-vcc               # Show verification conditions
 esbmc file.c --generate-testcase      # Generate test from counterexample
 esbmc file.py --generate-pytest-testcase            # Generate pytest
+esbmc file.c --sarif-output out.sarif # SARIF 2.1.0 report with CWE ids
+esbmc file.c --all-witnesses          # Enumerate several violating inputs (implies --multi-property)
+esbmc file.c --show-funccall-trace    # Call sequence leading to the failure
 ```
 
 ## Resource Limits

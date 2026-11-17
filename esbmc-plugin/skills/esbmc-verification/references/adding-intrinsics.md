@@ -28,7 +28,7 @@ int test_sort() {
 int test_sort() {
     int arr[5];
     for (int i = 0; i < 5; i++) {
-        arr[i] = __ESBMC_nondet_int();
+        arr[i] = __VERIFIER_nondet_int();
     }
     sort(arr, 5);
 }
@@ -109,7 +109,7 @@ for (int i = 0; i < n; i++) {
 ```c
 #define SIZE 100
 int arr[SIZE];
-int idx = __ESBMC_nondet_int();
+int idx = __VERIFIER_nondet_int();
 __ESBMC_assume(idx >= 0 && idx < SIZE);
 arr[idx] = value;  // Verified safe
 ```
@@ -128,8 +128,8 @@ if (ptr != NULL) {
 ### Safe Integer Arithmetic
 ```c
 #include <limits.h>
-int a = __ESBMC_nondet_int();
-int b = __ESBMC_nondet_int();
+int a = __VERIFIER_nondet_int();
+int b = __VERIFIER_nondet_int();
 __ESBMC_assume(a >= 0 && a <= 10000);
 __ESBMC_assume(b >= 0 && b <= 10000);
 int sum = a + b;  // Cannot overflow
@@ -137,8 +137,8 @@ int sum = a + b;  // Cannot overflow
 
 ### Safe Division
 ```c
-int a = __ESBMC_nondet_int();
-int b = __ESBMC_nondet_int();
+int a = __VERIFIER_nondet_int();
+int b = __VERIFIER_nondet_int();
 __ESBMC_assume(b != 0);  // Prevent division by zero
 int result = a / b;
 ```
@@ -259,10 +259,10 @@ public:
 ```cpp
 #include <vector>
 std::vector<int> v;
-int n = __ESBMC_nondet_int();
+int n = __VERIFIER_nondet_int();
 __ESBMC_assume(n > 0 && n <= 10);
 for (int i = 0; i < n; i++) {
-    v.push_back(__ESBMC_nondet_int());
+    v.push_back(__VERIFIER_nondet_int());
 }
 assert(v.size() == (size_t)n);
 ```
