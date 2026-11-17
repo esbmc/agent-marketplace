@@ -191,13 +191,9 @@ esbmc file.c --replace-all-contracts
 esbmc file.c --replace-call-with-contract "*"
 ```
 
-### Assume Non-Null Pointers Valid
+### Pointer Validity
 
-```bash
-esbmc file.c --enforce-contract "func" --assume-nonnull-valid
-```
-
-In enforce mode, automatically adds `__ESBMC_valid_object` assumptions for every non-null pointer parameter. Useful when the contract does not explicitly require pointer validity.
+There is no flag that assumes pointer parameters valid. State it in the contract with `__ESBMC_requires`, otherwise the enforced body is checked against arbitrary pointers.
 
 ### Combining Enforce and Replace
 
@@ -257,8 +253,7 @@ void zero_point(Point *p) {
 ```bash
 # Enforce: check that zero_point really satisfies its contract
 esbmc point.c --enforce-contract "zero_point" \
-              --function "zero_point" \
-              --assume-nonnull-valid
+              --function "zero_point"
 ```
 
 ### Pre-State Comparison with `__ESBMC_old`
