@@ -54,14 +54,23 @@ esbmc file.c --funsigned-char
 # Full memory safety
 esbmc file.c --memory-leak-check
 
-# VLA size checks
-esbmc file.c --vla-size-check
+# VLA size checks are on by default; disable with
+esbmc file.c --no-vla-size-check
 
 # Printf format checks
 esbmc file.c --printf-check
 
 # Struct field bounds
 esbmc file.c --struct-fields-check
+
+# Reads of uninitialised locals (CWE-457) and unchecked return values (CWE-252)
+esbmc file.c --uninitialised-vars-check --unchecked-return-value-check
+
+# Allocations whose size can exceed a bound, default 1 MiB (CWE-789)
+esbmc file.c --excessive-alloc-check=65536
+
+# Aliasing of restrict-qualified parameters
+esbmc file.c --restrict-check
 ```
 
 ## C++ Verification
@@ -154,8 +163,24 @@ esbmc script.py --override-return-annotation
 # Set max length for nondet strings
 esbmc script.py --nondet-str-length 32
 
-# Generate pytest from counterexample
-esbmc script.py --generate-pytest-testcase
+
+# Counterexample as data (a runnable test would re-run the program under CPython,
+# where the nondet intrinsics do not exist)
+esbmc script.py --generate-pytest-testcase --pytest-values-only --pytest-output-dir out
+
+# Type-check with mypy --strict first (needs mypy installed)
+esbmc script.py --python-typecheck
+
+# Report only some uncaught exceptions (subclasses included); other exceptions
+# end their path silently, and assert statements become assumptions
+# unless AssertionError is listed
+esbmc script.py --python-check-exceptions ValueError,KeyError
+
+# Keep exception checks but treat the program's own asserts as assumptions
+esbmc script.py --python-ignore-assertions
+
+# Tolerance (in ulps) for math/NumPy transcendental functions, default 8
+esbmc script.py --python-math-ulps 0
 ```
 
 ### Python Type Annotations
@@ -362,6 +387,12 @@ esbmc --sol contract.sol --contract MyContract --no-visibility
 
 # Negate property for specific function
 esbmc --sol contract.sol --contract MyContract --negating-property transfer
+
+# Verify one public function only (constructor and state init still run)
+esbmc --sol contract.sol --contract MyContract --focus-function transfer
+
+# Use a specific solc binary
+esbmc --sol contract.sol --contract MyContract --solc-bin /opt/solc/solc
 ```
 
 ### Solidity Verification Example
