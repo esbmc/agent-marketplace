@@ -8,7 +8,7 @@
  * - Template function verification
  * - Smart pointer safety
  *
- * Run with: esbmc cpp-verify.cpp --unwind 10 --memory-leak-check
+ * Run with: esbmc cpp-verify.cpp --unwind 11 --memory-leak-check
  */
 
 #include <cassert>

@@ -13,12 +13,13 @@ Run with: esbmc python-verify.py --incremental-bmc --no-pointer-check --k-step 2
 The whole file does not finish in reasonable time; test_dict_operations alone
 runs for minutes. Trim main() to the tests you want to check.
 
-This file is for ESBMC, not for `python3`. nondet_int(), __ESBMC_assume() and
-the rest are ESBMC intrinsics with no Python binding, so plain Python stops at
-the first one with a NameError. Do not define them here either: ESBMC treats
-them as intrinsics only while they are undefined, and a Python body makes every
-check below vacuous.
+This file is for ESBMC, not for `python3`. The `esbmc` module imported below
+exists only under ESBMC (src/python-frontend/models/esbmc.py); plain Python
+fails with ModuleNotFoundError. Do not define nondet_int() and friends here:
+a Python body replaces the intrinsic and narrows the inputs ESBMC explores.
 """
+
+from esbmc import nondet_int, __ESBMC_assume
 
 # ============================================
 # Example 1: Simple Function Verification

@@ -252,20 +252,20 @@ __ESBMC_atomic_end();
 ### Dynamic Memory
 
 ```c
-// Check if memory is valid
-__ESBMC_assert(__ESBMC_is_valid(ptr), "Pointer is valid");
+// Check that n bytes at ptr are readable
+__ESBMC_assert(__ESBMC_r_ok(ptr, n), "Pointer is readable");
 
-// Check buffer bounds
-__ESBMC_assert(__ESBMC_buffer_size(ptr) >= required, "Buffer large enough");
+// Check the size of the object ptr points into
+__ESBMC_assert(__ESBMC_get_object_size(ptr) >= required, "Buffer large enough");
 ```
 
 ### Array Bounds
 
 ```c
-// Explicit bounds checking
+// Explicit bounds guard; the default bounds check also covers arr[idx]
 int arr[10];
 int idx = __VERIFIER_nondet_int();
-if (__ESBMC_is_valid_index(arr, idx)) {
+if (idx >= 0 && idx < 10) {
     arr[idx] = value;
 }
 ```

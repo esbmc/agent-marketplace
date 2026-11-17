@@ -7,7 +7,7 @@
  * - Arithmetic operation safety
  * - Safe arithmetic patterns
  *
- * Run with: esbmc overflow-check.c --overflow-check --unsigned-overflow-check --unwind 10
+ * Run with: esbmc overflow-check.c --overflow-check --unsigned-overflow-check --unwind 20
  */
 
 #include <limits.h>
